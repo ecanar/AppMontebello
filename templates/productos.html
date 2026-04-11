@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Productos - App Montebello{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2>Gestión de Productos</h2>
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Agregar Nuevo Producto</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('add_producto') }}" method="POST">
+                    <div class="mb-3">
+                        <label for="nombre" class="form-label">Nombre del Producto</label>
+                        <input type="text" class="form-control" id="nombre" name="nombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="medida" class="form-label">Medida</label>
+                        <select class="form-select" id="medida" name="medida" required>
+                            <option value="">Seleccionar medida...</option>
+                            <option value="sac">Saco (sac)</option>
+                            <option value="lbs">Libras (lbs)</option>
+                            <option value="ata">Atado (ata)</option>
+                            <option value="rac">Racimo (rac)</option>
+                            <option value="cart">Cartón (cart)</option>
+                            <option value="uni">Unidad (uni)</option>
+                            <option value="cub">Cubeta (cub)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="proveedor" class="form-label">Proveedor</label>
+                        <select class="form-select" id="proveedor" name="proveedor" required>
+                            <option value="">Seleccionar proveedor...</option>
+                            {% for proveedor in proveedores %}
+                            <option value="{{ proveedor.Id_Prov }}">{{ proveedor.Nom_Prov }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Agregar Producto</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5>Lista de Productos</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Medida</th>
+                                <th>Proveedor</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for producto in productos %}
+                            <tr>
+                                <td>{{ producto.id_Prod }}</td>
+                                <td>{{ producto.Nom_Prod }}</td>
+                                <td>{{ producto.Medida }}</td>
+                                <td>{{ producto.proveedor.Nom_Prov if producto.proveedor else 'N/A' }}</td>
+                                <td>
+                                    <a href="{{ url_for('edit_producto', id=producto.id_Prod) }}" class="btn btn-sm btn-warning">Editar</a>
+                                    <a href="{{ url_for('delete_producto', id=producto.id_Prod) }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Está seguro de eliminar este producto?')">Eliminar</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

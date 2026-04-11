@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Proveedores - App Montebello{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2>Gestión de Proveedores</h2>
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Agregar Nuevo Proveedor</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('add_proveedor') }}" method="POST">
+                    <div class="mb-3">
+                        <label for="nombre" class="form-label">Nombre del Proveedor</label>
+                        <input type="text" class="form-control" id="nombre" name="nombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="cedula" class="form-label">Número de Cédula</label>
+                        <input type="text" class="form-control" id="cedula" name="cedula" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="anden" class="form-label">Número de Andén</label>
+                        <input type="text" class="form-control" id="anden" name="anden">
+                    </div>
+                    <div class="mb-3">
+                        <label for="puesto" class="form-label">Número de Puesto</label>
+                        <input type="text" class="form-control" id="puesto" name="puesto">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Agregar Proveedor</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5>Lista de Proveedores</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Cédula</th>
+                                <th>Andén</th>
+                                <th>Puesto</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for proveedor in proveedores %}
+                            <tr>
+                                <td>{{ proveedor.Id_Prov }}</td>
+                                <td>{{ proveedor.Nom_Prov }}</td>
+                                <td>{{ proveedor.Num_Ced }}</td>
+                                <td>{{ proveedor.Num_Anden or '-' }}</td>
+                                <td>{{ proveedor.Num_Puesto or '-' }}</td>
+                                <td>
+                                    <a href="{{ url_for('edit_proveedor', id=proveedor.Id_Prov) }}" class="btn btn-sm btn-warning">Editar</a>
+                                    <a href="{{ url_for('delete_proveedor', id=proveedor.Id_Prov) }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Está seguro de eliminar este proveedor?')">Eliminar</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

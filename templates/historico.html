@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Histórico de Compras - App Montebello{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2>Histórico de Compras</h2>
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Historial de Todas las Compras</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID Lista</th>
+                                <th>Fecha</th>
+                                <th>Producto</th>
+                                <th>Proveedor</th>
+                                <th>Cant. Pedida</th>
+                                <th>Cant. Comprada</th>
+                                <th>Cant. Bodega</th>
+                                <th>Valor Pagado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for registro in historico %}
+                            <tr>
+                                <td>{{ registro.Id_Comp }}</td>
+                                <td>{{ registro.Fec_Comp.strftime('%d/%m/%Y') if registro.Fec_Comp else '-' }}</td>
+                                <td>{{ registro.producto_h.Nom_Prod }} ({{ registro.producto_h.Medida }})</td>
+                                <td>{{ registro.proveedor_h.Nom_Prov }}</td>
+                                <td>{{ registro.Cant_Ped }}</td>
+                                <td>{{ registro.Cant_Comp }}</td>
+                                <td>{{ registro.Cant_Bod }}</td>
+                                <td>${{ "%.2f"|format(registro.Val_Pag) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% if not historico %}
+                    <p class="text-center text-muted">No hay registros en el histórico.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

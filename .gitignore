@@ -1,0 +1,20 @@
+# Entorno Virtual
+venv/
+.venv/
+env/
+
+# Base de Datos
+*.db
+*.sqlite3
+
+# Variables de Entorno (SEGURIDAD)
+.env
+
+# Archivos de Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# IDEs
+.vscode/
+.idea/
