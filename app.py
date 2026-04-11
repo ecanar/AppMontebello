@@ -9,7 +9,14 @@ load_dotenv()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'default_secret_key')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:///montebello.db')
+
+# Configuración de la base de datos (Soporta Railway y Local)
+database_uri = os.getenv('DATABASE_URL', os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:///montebello.db'))
+# Railway usa "postgres://" pero SQLAlchemy requiere "postgresql://"
+if database_uri.startswith("postgres://"):
+    database_uri = database_uri.replace("postgres://", "postgresql://", 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = database_uri
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -433,9 +440,10 @@ def transferir_pedidos():
         
     return redirect(url_for('compras'))
 
+with app.app_context():
+    db.create_all()
+
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     # Railway asigna el puerto automáticamente en la variable de entorno PORT
     port = int(os.environ.get("PORT", 5000)) 
     app.run(host='0.0.0.0', port=port)
