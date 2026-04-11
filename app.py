@@ -346,8 +346,13 @@ def add_pedido():
             id_lista = (ultimo_pedido.Id_Lista + 1) if ultimo_pedido else 1
             
             id_prod = request.form.get('producto')
-            cant_ped = float(request.form.get('cant_ped', 0))
-            cant_bod = float(request.form.get('cant_bod', 0))
+            # Si el campo está vacío, se asigna 0.0 automáticamente
+            try:
+                cant_ped = float(request.form.get('cant_ped') or 0)
+                cant_bod = float(request.form.get('cant_bod') or 0)
+            except ValueError:
+                flash('Las cantidades deben ser valores numéricos.')
+                return redirect(url_for('pedidos'))
             
             if not id_prod:
                 flash('Debe seleccionar un producto.')
@@ -390,9 +395,15 @@ def transferir_pedidos():
             flash('No hay pedidos pendientes para transferir.')
             return redirect(url_for('compras'))
         
-        # Obtener el siguiente Id_Comp para compras del día
-        ultima_compra = CompraDia.query.order_by(CompraDia.Id_Comp.desc()).first()
-        id_comp = (ultima_compra.Id_Comp + 1) if ultima_compra else 1
+        # Obtener el siguiente Id_Comp para ESTA transferencia (agrupación)
+        # Se busca en histórico y compras del día para asegurar que sea único globalmente
+        ultima_compra_dia = CompraDia.query.order_by(CompraDia.Id_Comp.desc()).first()
+        ultimo_historico = HistoricoCompra.query.order_by(HistoricoCompra.Id_Comp.desc()).first()
+        
+        id_max_dia = ultima_compra_dia.Id_Comp if ultima_compra_dia else 0
+        id_max_hist = ultimo_historico.Id_Comp if ultimo_historico else 0
+        
+        id_comp = max(id_max_dia, id_max_hist) + 1
         
         transferidos = 0
         for pedido in pedidos_pendientes:
@@ -402,7 +413,7 @@ def transferir_pedidos():
                 
             id_prov = producto.Id_Prov
             nueva_compra = CompraDia(
-                Id_Comp=id_comp,
+                Id_Comp=id_comp, # Se usa el mismo Id_Comp para todos los productos de esta transferencia
                 Id_Prod=pedido.Id_Prod,
                 Cant_Ped=pedido.Cant_Ped,
                 Cant_Bod=pedido.Cant_Bod,
@@ -415,7 +426,7 @@ def transferir_pedidos():
         
         PedidoCompra.query.delete()
         db.session.commit()
-        flash(f'Se han transferido {transferidos} pedidos a Compras del Día.')
+        flash(f'Se han transferido {transferidos} pedidos a la Compra Num: {id_comp}.')
     except Exception as e:
         db.session.rollback()
         flash(f'Error al transferir pedidos: {str(e)}')

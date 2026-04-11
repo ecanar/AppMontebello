@@ -5,54 +5,24 @@
 {% block content %}
 <div class="row">
     <div class="col-md-12">
-        <h2>Compras del Día</h2>
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+                <h2 class="mb-0">Compras del Día</h2>
+                {% if compras %}
+                <span class="ms-3 badge bg-secondary fs-5">Num: {{ compras[0].Id_Comp }}</span>
+                {% endif %}
+            </div>
+            <a href="{{ url_for('pedidos') }}" class="btn btn-primary">Ir a Pedidos de Compra</a>
+        </div>
     </div>
 </div>
 
 <div class="row mt-3">
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h5>Registrar Nueva Compra</h5>
-            </div>
-            <div class="card-body">
-                <form action="{{ url_for('add_compra') }}" method="POST">
-                    <div class="mb-3">
-                        <label for="producto" class="form-label">Producto</label>
-                        <select class="form-select" id="producto" name="producto" required>
-                            <option value="">Seleccionar producto...</option>
-                            {% for producto in productos %}
-                            <option value="{{ producto.id_Prod }}">{{ producto.Nom_Prod }} ({{ producto.Medida }})</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="cant_ped" class="form-label">Cantidad Pedida</label>
-                        <input type="number" step="0.01" class="form-control" id="cant_ped" name="cant_ped" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="cant_bod" class="form-label">Cantidad en Bodega</label>
-                        <input type="number" step="0.01" class="form-control" id="cant_bod" name="cant_bod" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="cant_comp" class="form-label">Cantidad Comprada</label>
-                        <input type="number" step="0.01" class="form-control" id="cant_comp" name="cant_comp" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="val_pag" class="form-label">Valor Pagado</label>
-                        <input type="number" step="0.01" class="form-control" id="val_pag" name="val_pag" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Registrar Compra</button>
-                </form>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-8">
+    <div class="col-md-12">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5>Compras Registradas Hoy</h5>
                 <div>
-                    <a href="{{ url_for('pedidos') }}" class="btn btn-sm btn-info">Ver Pedidos Pendientes</a>
                     <a href="{{ url_for('mover_historico') }}" class="btn btn-sm btn-success" onclick="return confirm('¿Está seguro de mover todas las compras al histórico?')">Mover a Histórico</a>
                 </div>
             </div>
@@ -61,7 +31,7 @@
                     <table class="table table-striped">
                         <thead>
                             <tr>
-                                <th>ID Lista</th>
+                                <th>ID Reg.</th>
                                 <th>Producto</th>
                                 <th>Proveedor</th>
                                 <th>Cant. Pedida</th>
@@ -75,7 +45,7 @@
                         <tbody>
                             {% for compra in compras %}
                             <tr>
-                                <td>{{ compra.Id_Comp }}</td>
+                                <td>{{ compra.Id_Lin_Comp }}</td>
                                 <td>{{ compra.producto.Nom_Prod }} ({{ compra.producto.Medida }})</td>
                                 <td>{{ compra.proveedor_compra.Nom_Prov }}</td>
                                 <td>{{ compra.Cant_Ped }}</td>
