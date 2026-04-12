@@ -55,10 +55,9 @@
             </div>
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-striped">
+                    <table class="table table-striped" style="white-space: nowrap;">
                         <thead>
                             <tr>
-                                <th>ID</th>
                                 <th>Nombre</th>
                                 <th>Medida</th>
                                 <th>Proveedor</th>
@@ -68,7 +67,6 @@
                         <tbody>
                             {% for producto in productos %}
                             <tr>
-                                <td>{{ producto.id_Prod }}</td>
                                 <td>{{ producto.Nom_Prod }}</td>
                                 <td>{{ producto.Medida }}</td>
                                 <td>{{ producto.proveedor.Nom_Prov if producto.proveedor else 'N/A' }}</td>
