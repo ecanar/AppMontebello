@@ -14,51 +14,21 @@
     </div>
 </div>
 
-<div class="row mt-4">
-    <div class="col-md-3">
-        <div class="card text-center">
-            <div class="card-body">
-                <h5 class="card-title">Productos</h5>
-                <p class="card-text">Gestiona el catálogo de productos del mercado.</p>
-                <a href="{{ url_for('productos') }}" class="btn btn-primary">Ir a Productos</a>
-            </div>
-        </div>
+<div class="row mt-4 g-3 justify-content-center">
+    <div class="col-md-2 d-grid">
+        <a href="{{ url_for('productos') }}" class="btn btn-primary btn-lg py-4">Productos</a>
     </div>
-    <div class="col-md-3">
-        <div class="card text-center">
-            <div class="card-body">
-                <h5 class="card-title">Proveedores</h5>
-                <p class="card-text">Administra la información de los proveedores.</p>
-                <a href="{{ url_for('proveedores') }}" class="btn btn-primary">Ir a Proveedores</a>
-            </div>
-        </div>
+    <div class="col-md-2 d-grid">
+        <a href="{{ url_for('proveedores') }}" class="btn btn-primary btn-lg py-4">Proveedores</a>
     </div>
-    <div class="col-md-3">
-        <div class="card text-center">
-            <div class="card-body">
-                <h5 class="card-title">Pedidos de Compra</h5>
-                <p class="card-text">Gestiona los pedidos de compra con IDs secuenciales.</p>
-                <a href="{{ url_for('pedidos') }}" class="btn btn-primary">Ir a Pedidos</a>
-            </div>
-        </div>
+    <div class="col-md-2 d-grid">
+        <a href="{{ url_for('pedidos') }}" class="btn btn-primary btn-lg py-4">Pedidos de Compra</a>
     </div>
-    <div class="col-md-3">
-        <div class="card text-center">
-            <div class="card-body">
-                <h5 class="card-title">Compras del Día</h5>
-                <p class="card-text">Registra las compras realizadas hoy.</p>
-                <a href="{{ url_for('compras') }}" class="btn btn-primary">Ir a Compras</a>
-            </div>
-        </div>
+    <div class="col-md-2 d-grid">
+        <a href="{{ url_for('compras') }}" class="btn btn-primary btn-lg py-4">Compras del Día</a>
     </div>
-    <div class="col-md-3">
-        <div class="card text-center">
-            <div class="card-body">
-                <h5 class="card-title">Histórico</h5>
-                <p class="card-text">Consulta el historial de compras.</p>
-                <a href="{{ url_for('historico') }}" class="btn btn-primary">Ir a Histórico</a>
-            </div>
-        </div>
+    <div class="col-md-2 d-grid">
+        <a href="{{ url_for('historico') }}" class="btn btn-primary btn-lg py-4">Histórico</a>
     </div>
 </div>
 {% endblock %}
