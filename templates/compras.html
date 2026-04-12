@@ -12,7 +12,6 @@
                 <span class="ms-3 badge bg-secondary fs-5">Num: {{ compras[0].Id_Comp }}</span>
                 {% endif %}
             </div>
-            <a href="{{ url_for('pedidos') }}" class="btn btn-primary">Ir a Pedidos de Compra</a>
         </div>
     </div>
 </div>
@@ -22,7 +21,11 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5>Compras Registradas Hoy</h5>
-                <div>
+                <div class="d-flex align-items-center gap-3">
+                    {% if compras %}
+                    <span class="fw-bold fs-6">$ {{ "%.2f"|format(compras|sum(attribute='Val_Pag')) }}</span>
+                    {% endif %}
+                    <a href="{{ url_for('pedidos') }}" class="btn btn-sm btn-primary">Ir a Pedidos de Compra</a>
                     <a href="{{ url_for('mover_historico') }}" class="btn btn-sm btn-success" onclick="return confirm('¿Está seguro de mover todas las compras al histórico?')">Mover a Histórico</a>
                 </div>
             </div>

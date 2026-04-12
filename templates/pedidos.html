@@ -34,9 +34,6 @@
                         <label for="cant_bod" class="form-label">Cantidad en Bodega</label>
                         <input type="number" step="0.01" class="form-control" id="cant_bod" name="cant_bod">
                     </div>
-                    <div class="alert alert-info">
-                        <small><strong>Nota:</strong> El ID de Lista se asignará automáticamente de forma secuencial para el año actual.</small>
-                    </div>
                     <button type="submit" class="btn btn-primary">Agregar Pedido</button>
                 </form>
             </div>
@@ -88,21 +85,4 @@
     </div>
 </div>
 
-<div class="row mt-3">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header">
-                <h6>Información del Sistema</h6>
-            </div>
-            <div class="card-body">
-                <p class="mb-0">
-                    <strong>Sistema de IDs Secuenciales Anuales:</strong> 
-                    Los IDs de Lista se generan automáticamente de forma secuencial para cada año. 
-                    El primer pedido del año será ID 1, el segundo ID 2, y así sucesivamente. 
-                    Al cambiar de año, la secuencia se reinicia desde 1.
-                </p>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}
