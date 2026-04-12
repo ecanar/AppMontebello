@@ -41,9 +41,9 @@
     </div>
     <div class="col-md-8">
         <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
+            <div class="card-header d-flex justify-content-between align-items-center" style="padding-top: 1rem; padding-bottom: 1rem;">
                 <h5>Lista de Pedidos de Compra</h5>
-                <div>
+                <div class="d-flex gap-2">
                     <a href="{{ url_for('compras') }}" class="btn btn-sm btn-info">Ir a Compras del Día</a>
                     <a href="{{ url_for('transferir_pedidos') }}" class="btn btn-sm btn-success" onclick="return confirm('¿Está seguro de transferir todos los pedidos a Compras del Día?')">Transferir Compras</a>
                 </div>
