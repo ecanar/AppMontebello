@@ -23,7 +23,7 @@
                 <h5>Compras Registradas Hoy</h5>
                 <div class="d-flex align-items-center gap-3">
                     {% if compras %}
-                    <span class="fw-bold fs-6">$ {{ "%.2f"|format(compras|sum(attribute='Val_Pag')) }}</span>
+                    <span id="total-val-pag" class="fw-bold fs-6">$ {{ "%.2f"|format(compras|sum(attribute='Val_Pag')) }}</span>
                     {% endif %}
                     <a href="{{ url_for('pedidos') }}" class="btn btn-sm btn-primary">Ir a Pedidos de Compra</a>
                     <a href="{{ url_for('mover_historico') }}" class="btn btn-sm btn-success" onclick="return confirm('¿Está seguro de mover todas las compras al histórico?')">Mover a Histórico</a>
@@ -53,8 +53,8 @@
                                 <td>{{ compra.proveedor_compra.Nom_Prov }}</td>
                                 <td>{{ compra.Cant_Ped }}</td>
                                 <td>{{ compra.Cant_Bod }}</td>
-                                <td>{{ compra.Cant_Comp }}</td>
-                                <td>${{ "%.2f"|format(compra.Val_Pag) }}</td>
+                                <td class="celda-editable" data-id="{{ compra.Id_Lin_Comp }}" data-campo="cant_comp" title="Clic para editar">{{ compra.Cant_Comp }}</td>
+                                <td class="celda-editable" data-id="{{ compra.Id_Lin_Comp }}" data-campo="val_pag" title="Clic para editar">{{ "%.2f"|format(compra.Val_Pag) }}</td>
                                 <td>{{ compra.Fec_Comp.strftime('%d/%m/%Y') if compra.Fec_Comp else '-' }}</td>
                                 <td>
                                     <a href="{{ url_for('delete_compra', id=compra.Id_Lin_Comp) }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Está seguro de eliminar esta compra?')">Eliminar</a>
@@ -71,4 +71,63 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+    .celda-editable { cursor: pointer; }
+    .celda-editable:hover { background-color: #fff3cd; }
+    .celda-editable input {
+        width: 90px; border: 1px solid #0d6efd;
+        border-radius: 4px; padding: 1px 4px; font-size: inherit;
+    }
+</style>
+<script>
+document.querySelectorAll('.celda-editable').forEach(function(td) {
+    td.addEventListener('click', function() {
+        if (td.querySelector('input')) return;
+        const valorActual = td.textContent.trim();
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.step = '0.01';
+        input.value = valorActual;
+        td.textContent = '';
+        td.appendChild(input);
+        input.focus();
+        input.select();
+
+        function guardar() {
+            const nuevoValor = parseFloat(input.value);
+            if (isNaN(nuevoValor)) { td.textContent = valorActual; return; }
+            const id = td.dataset.id;
+            const campo = td.dataset.campo;
+            const body = {};
+            body[campo] = nuevoValor;
+            fetch('/compras/update/' + id, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(body)
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.ok) {
+                    td.textContent = nuevoValor.toFixed(2);
+                    const totalEl = document.getElementById('total-val-pag');
+                    if (totalEl) totalEl.textContent = '$ ' + data.total.toFixed(2);
+                } else {
+                    td.textContent = valorActual;
+                    alert('Error al guardar: ' + data.error);
+                }
+            })
+            .catch(() => { td.textContent = valorActual; });
+        }
+
+        input.addEventListener('blur', guardar);
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') { input.blur(); }
+            if (e.key === 'Escape') { td.textContent = valorActual; }
+        });
+    });
+});
+</script>
 {% endblock %}

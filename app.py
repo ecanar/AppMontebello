@@ -299,6 +299,22 @@ def add_compra():
             
         return redirect(url_for('compras'))
 
+@app.route('/compras/update/<int:id>', methods=['POST'])
+def update_compra(id):
+    compra = CompraDia.query.get_or_404(id)
+    try:
+        data = request.get_json()
+        if 'cant_comp' in data:
+            compra.Cant_Comp = float(data['cant_comp'])
+        if 'val_pag' in data:
+            compra.Val_Pag = float(data['val_pag'])
+        db.session.commit()
+        total = sum(c.Val_Pag for c in CompraDia.query.all())
+        return {'ok': True, 'total': round(total, 2)}
+    except Exception as e:
+        db.session.rollback()
+        return {'ok': False, 'error': str(e)}, 400
+
 @app.route('/compras/delete/<int:id>')
 def delete_compra(id):
     compra = CompraDia.query.get_or_404(id)
