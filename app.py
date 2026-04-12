@@ -478,18 +478,6 @@ with app.app_context():
     except Exception as e:
         print(f'Advertencia al crear tablas: {e}')
 
-@app.route('/admin/fix_id_comp')
-def fix_id_comp():
-    try:
-        updated = CompraDia.query.filter_by(Id_Comp=7).all()
-        count = len(updated)
-        for r in updated:
-            r.Id_Comp = 6
-        db.session.commit()
-        return f'Listo. {count} registros actualizados de Id_Comp=7 a Id_Comp=6.'
-    except Exception as e:
-        db.session.rollback()
-        return f'Error: {str(e)}'
 
 if __name__ == '__main__':
     # Railway asigna el puerto automáticamente en la variable de entorno PORT
