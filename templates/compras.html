@@ -49,8 +49,8 @@
                                 <td class="col-producto" title="{{ compra.producto.Nom_Prod }} ({{ compra.producto.Medida }})">{{ compra.producto.Nom_Prod }} ({{ compra.producto.Medida }})</td>
                                 <td>{{ compra.Cant_Ped }}</td>
                                 <td>{{ compra.Cant_Bod }}</td>
-                                <td class="celda-editable" data-id="{{ compra.Id_Lin_Comp }}" data-campo="cant_comp" title="Clic para editar">{{ compra.Cant_Comp }}</td>
-                                <td class="celda-editable" data-id="{{ compra.Id_Lin_Comp }}" data-campo="val_pag" title="Clic para editar">{{ "%.2f"|format(compra.Val_Pag) }}</td>
+                                <td class="celda-editable" data-id="{{ compra.Id_Lin_Comp }}" data-campo="cant_comp" title="Clic para editar">{{ compra.Cant_Comp if compra.Cant_Comp else '' }}</td>
+                                <td class="celda-editable" data-id="{{ compra.Id_Lin_Comp }}" data-campo="val_pag" title="Clic para editar">{{ "%.2f"|format(compra.Val_Pag) if compra.Val_Pag else '' }}</td>
                                 <td>{{ compra.Fec_Comp.strftime('%d/%m/%Y') if compra.Fec_Comp else '-' }}</td>
                                 <td>
                                     <a href="{{ url_for('delete_compra', id=compra.Id_Lin_Comp) }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Está seguro de eliminar esta compra?')">Eliminar</a>
@@ -105,8 +105,8 @@ document.querySelectorAll('.celda-editable').forEach(function(td) {
         input.select();
 
         function guardar() {
-            const nuevoValor = parseFloat(input.value);
-            if (isNaN(nuevoValor)) { td.textContent = valorActual; return; }
+            const nuevoValor = parseFloat(input.value) || 0;
+            if (input.value.trim() === '' && valorActual === '') { td.textContent = ''; return; }
             const id = td.dataset.id;
             const campo = td.dataset.campo;
             const body = {};
@@ -119,7 +119,7 @@ document.querySelectorAll('.celda-editable').forEach(function(td) {
             .then(r => r.json())
             .then(data => {
                 if (data.ok) {
-                    td.textContent = nuevoValor.toFixed(2);
+                    td.textContent = nuevoValor === 0 ? '' : nuevoValor.toFixed(2);
                     const totalEl = document.getElementById('total-val-pag');
                     if (totalEl) totalEl.textContent = 'Total $ ' + data.total.toFixed(2);
                 } else {
