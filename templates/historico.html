@@ -23,11 +23,11 @@
                                 <th>Id Comp</th>
                                 <th>Fecha</th>
                                 <th>Producto</th>
-                                <th>Proveedor</th>
                                 <th>Cant. Pedida</th>
                                 <th>Cant. Comprada</th>
                                 <th>Cant. Bodega</th>
                                 <th>Valor Pagado</th>
+                                <th>Proveedor</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -36,11 +36,11 @@
                                 <td>{{ registro.Id_Comp }}</td>
                                 <td>{{ registro.Fec_Comp.strftime('%d/%m/%Y') if registro.Fec_Comp else '-' }}</td>
                                 <td>{{ registro.producto_h.Nom_Prod }} ({{ registro.producto_h.Medida }})</td>
-                                <td>{{ registro.proveedor_h.Nom_Prov }}</td>
                                 <td>{{ registro.Cant_Ped }}</td>
                                 <td>{{ registro.Cant_Comp }}</td>
                                 <td>{{ registro.Cant_Bod }}</td>
                                 <td>${{ "%.2f"|format(registro.Val_Pag) }}</td>
+                                <td>{{ registro.proveedor_h.Nom_Prov }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -53,4 +53,10 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+    .table td, .table th { padding: 0.1rem 0.4rem; font-size: 0.78rem; line-height: 1.2; vertical-align: middle; white-space: nowrap; }
+</style>
 {% endblock %}
