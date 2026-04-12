@@ -434,15 +434,18 @@ def transferir_pedidos():
             flash('No hay pedidos pendientes para transferir.')
             return redirect(url_for('compras'))
         
-        # Obtener el siguiente Id_Comp para ESTA transferencia (agrupación)
-        # Se busca en histórico y compras del día para asegurar que sea único globalmente
-        ultima_compra_dia = CompraDia.query.order_by(CompraDia.Id_Comp.desc()).first()
-        ultimo_historico = HistoricoCompra.query.order_by(HistoricoCompra.Id_Comp.desc()).first()
+        # Si ya hay compras hoy, reutilizar el mismo Id_Comp (es la misma compra del día)
+        hoy = datetime.now(timezone.utc).date()
+        compra_hoy = CompraDia.query.filter_by(Fec_Comp=hoy).first()
         
-        id_max_dia = ultima_compra_dia.Id_Comp if ultima_compra_dia else 0
-        id_max_hist = ultimo_historico.Id_Comp if ultimo_historico else 0
-        
-        id_comp = max(id_max_dia, id_max_hist) + 1
+        if compra_hoy:
+            id_comp = compra_hoy.Id_Comp
+        else:
+            ultima_compra_dia = CompraDia.query.order_by(CompraDia.Id_Comp.desc()).first()
+            ultimo_historico = HistoricoCompra.query.order_by(HistoricoCompra.Id_Comp.desc()).first()
+            id_max_dia = ultima_compra_dia.Id_Comp if ultima_compra_dia else 0
+            id_max_hist = ultimo_historico.Id_Comp if ultimo_historico else 0
+            id_comp = max(id_max_dia, id_max_hist) + 1
         
         transferidos = 0
         for pedido in pedidos_pendientes:
