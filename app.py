@@ -1,8 +1,9 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timezone
 import os
 from dotenv import load_dotenv
+import google.generativeai as genai
 
 # Cargar variables de entorno
 load_dotenv()
@@ -481,6 +482,37 @@ with app.app_context():
     except Exception as e:
         print(f'Advertencia al crear tablas: {e}')
 
+
+@app.route('/consultas-ia', methods=['GET', 'POST'])
+def consultas_ia():
+    respuesta = None
+    error = None
+    pregunta = None
+    if request.method == 'POST':
+        pregunta = request.form.get('pregunta', '').strip()
+        try:
+            api_key = os.getenv('GEMINI_API_KEY')
+            if not api_key:
+                error = 'No se encontró la API Key de Gemini.'
+            else:
+                genai.configure(api_key=api_key)
+                model = genai.GenerativeModel('gemini-1.5-flash')
+
+                historico = HistoricoCompra.query.order_by(HistoricoCompra.Fec_Comp.desc()).limit(100).all()
+                compras_hoy = CompraDia.query.all()
+
+                contexto = "Datos de compras recientes:\n"
+                for r in compras_hoy:
+                    contexto += f"- Hoy: {r.producto.Nom_Prod}, cant_pedida={r.Cant_Ped}, cant_comprada={r.Cant_Comp}, valor=${r.Val_Pag}\n"
+                for r in historico:
+                    contexto += f"- {r.Fec_Comp}: {r.producto_h.Nom_Prod}, cant={r.Cant_Comp}, valor=${r.Val_Pag}, proveedor={r.proveedor_h.Nom_Prov}\n"
+
+                prompt = f"{contexto}\nPregunta: {pregunta}"
+                response = model.generate_content(prompt)
+                respuesta = response.text
+        except Exception as e:
+            error = f'Error al consultar IA: {str(e)}'
+    return render_template('consultas_ia.html', respuesta=respuesta, error=error, pregunta=pregunta)
 
 if __name__ == '__main__':
     # Railway asigna el puerto automáticamente en la variable de entorno PORT
