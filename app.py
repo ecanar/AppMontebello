@@ -16,9 +16,20 @@ database_uri = os.getenv('DATABASE_URL', os.getenv('SQLALCHEMY_DATABASE_URI', 's
 if database_uri.startswith("postgres://"):
     database_uri = database_uri.replace("postgres://", "postgresql://", 1)
 # Si la URI no empieza con un esquema válido, usar SQLite como fallback
-if not database_uri.startswith(("postgresql://", "sqlite://", "mysql://")):
+if not database_uri.startswith(("postgresql://", "postgresql+", "sqlite://", "mysql://")):
     print(f"ADVERTENCIA: DATABASE_URL inválida ('{database_uri[:30]}...'), usando SQLite.")
     database_uri = 'sqlite:///montebello.db'
+
+# Intentar psycopg3 si psycopg2 no está disponible
+if database_uri.startswith("postgresql://"):
+    try:
+        import psycopg2
+    except ImportError:
+        try:
+            import psycopg
+            database_uri = database_uri.replace("postgresql://", "postgresql+psycopg://", 1)
+        except ImportError:
+            pass
 
 app.config['SQLALCHEMY_DATABASE_URI'] = database_uri
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
