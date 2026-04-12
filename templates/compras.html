@@ -34,8 +34,8 @@
                     <table class="table table-striped">
                         <thead>
                             <tr>
-                                <th>ID Reg.</th>
-                                <th>Producto</th>
+                                <th class="col-id">ID Reg.</th>
+                                <th class="col-producto">Producto</th>
                                 <th>Cant. Pedida</th>
                                 <th>Cant. Bodega</th>
                                 <th>Cant. Comprada</th>
@@ -47,8 +47,8 @@
                         <tbody>
                             {% for compra in compras %}
                             <tr>
-                                <td>{{ compra.Id_Lin_Comp }}</td>
-                                <td>{{ compra.producto.Nom_Prod }} ({{ compra.producto.Medida }})</td>
+                                <td class="col-id">{{ compra.Id_Lin_Comp }}</td>
+                                <td class="col-producto" title="{{ compra.producto.Nom_Prod }} ({{ compra.producto.Medida }})">{{ compra.producto.Nom_Prod }} ({{ compra.producto.Medida }})</td>
                                 <td>{{ compra.Cant_Ped }}</td>
                                 <td>{{ compra.Cant_Bod }}</td>
                                 <td class="celda-editable" data-id="{{ compra.Id_Lin_Comp }}" data-campo="cant_comp" title="Clic para editar">{{ compra.Cant_Comp }}</td>
@@ -74,6 +74,8 @@
 {% block scripts %}
 <style>
     .table td, .table th { padding: 0.25rem 0.5rem; font-size: 0.875rem; }
+    .col-id { display: none; }
+    .col-producto { max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .celda-editable { cursor: pointer; }
     .celda-editable:hover { background-color: #fff3cd; }
     .celda-editable input {
