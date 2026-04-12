@@ -15,6 +15,10 @@ database_uri = os.getenv('DATABASE_URL', os.getenv('SQLALCHEMY_DATABASE_URI', 's
 # Railway usa "postgres://" pero SQLAlchemy requiere "postgresql://"
 if database_uri.startswith("postgres://"):
     database_uri = database_uri.replace("postgres://", "postgresql://", 1)
+# Si la URI no empieza con un esquema válido, usar SQLite como fallback
+if not database_uri.startswith(("postgresql://", "sqlite://", "mysql://")):
+    print(f"ADVERTENCIA: DATABASE_URL inválida ('{database_uri[:30]}...'), usando SQLite.")
+    database_uri = 'sqlite:///montebello.db'
 
 app.config['SQLALCHEMY_DATABASE_URI'] = database_uri
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
