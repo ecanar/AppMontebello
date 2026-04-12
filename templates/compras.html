@@ -10,7 +10,7 @@
                 <h2 class="mb-0">Compras</h2>
                 {% if compras %}
                 <span class="ms-3 badge bg-secondary fs-5">Num: {{ compras[0].Id_Comp }}</span>
-                <span class="ms-3 text-muted fs-6">{{ compras[0].Fec_Comp.strftime('%d/%m/%Y') if compras[0].Fec_Comp else '' }}</span>
+                <span class="ms-3 text-muted fs-4">{{ compras[0].Fec_Comp.strftime('%d/%m/%Y') if compras[0].Fec_Comp else '' }}</span>
                 {% endif %}
             </div>
         </div>
