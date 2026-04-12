@@ -37,10 +37,10 @@
                                 <td>{{ registro.Fec_Comp.strftime('%d/%m/%Y') if registro.Fec_Comp else '-' }}</td>
                                 <td>{{ registro.producto_h.Nom_Prod }} ({{ registro.producto_h.Medida }})</td>
                                 <td>{{ registro.proveedor_h.Nom_Prov }}</td>
-                                <td>{{ registro.Cant_Ped }}</td>
-                                <td>{{ registro.Cant_Comp }}</td>
-                                <td>{{ registro.Cant_Bod }}</td>
-                                <td>${{ "%.2f"|format(registro.Val_Pag) }}</td>
+                                <td>{% if registro.Cant_Ped != 0.0 %}{{ registro.Cant_Ped }}{% endif %}</td>
+                                <td>{% if registro.Cant_Comp != 0.0 %}{{ registro.Cant_Comp }}{% endif %}</td>
+                                <td>{% if registro.Cant_Bod != 0.0 %}{{ registro.Cant_Bod }}{% endif %}</td>
+                                <td>{% if registro.Val_Pag != 0.0 %}${{ "%.2f"|format(registro.Val_Pag) }}{% endif %}</td>
                             </tr>
                             {% endfor %}
                         </tbody>

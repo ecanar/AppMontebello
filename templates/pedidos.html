@@ -66,8 +66,8 @@
                             <tr>
                                 <td><strong>{{ pedido.Id_Lista }}</strong></td>
                                 <td>{{ pedido.producto_pedido.Nom_Prod }} ({{ pedido.producto_pedido.Medida }})</td>
-                                <td>{{ pedido.Cant_Ped }}</td>
-                                <td>{{ pedido.Cant_Bod }}</td>
+                                <td>{% if pedido.Cant_Ped != 0.0 %}{{ pedido.Cant_Ped }}{% endif %}</td>
+                                <td>{% if pedido.Cant_Bod != 0.0 %}{{ pedido.Cant_Bod }}{% endif %}</td>
                                 <td>{{ pedido.Fec_Ped.strftime('%d/%m/%Y') if pedido.Fec_Ped else '-' }}</td>
                                 <td>
                                     <a href="{{ url_for('delete_pedido', id=pedido.Id_Lin_Ped) }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Está seguro de eliminar este pedido?')">Eliminar</a>
