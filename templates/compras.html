@@ -47,10 +47,10 @@
                             <tr>
                                 <td class="col-id">{{ compra.Id_Lin_Comp }}</td>
                                 <td class="col-producto" title="{{ compra.producto.Nom_Prod }} ({{ compra.producto.Medida }})">{{ compra.producto.Nom_Prod }} ({{ compra.producto.Medida }})</td>
-                                <td>{{ compra.Cant_Ped }}</td>
-                                <td>{{ compra.Cant_Bod }}</td>
-                                <td class="celda-editable" data-id="{{ compra.Id_Lin_Comp }}" data-campo="cant_comp" title="Clic para editar">{{ compra.Cant_Comp }}</td>
-                                <td class="celda-editable" data-id="{{ compra.Id_Lin_Comp }}" data-campo="val_pag" title="Clic para editar">{{ "%.2f"|format(compra.Val_Pag) }}</td>
+                                <td>{% if compra.Cant_Ped != 0.0 %}{{ compra.Cant_Ped }}{% endif %}</td>
+                                <td>{% if compra.Cant_Bod != 0.0 %}{{ compra.Cant_Bod }}{% endif %}</td>
+                                <td class="celda-editable" data-id="{{ compra.Id_Lin_Comp }}" data-campo="cant_comp" title="Clic para editar">{% if compra.Cant_Comp != 0.0 %}{{ compra.Cant_Comp }}{% endif %}</td>
+                                <td class="celda-editable" data-id="{{ compra.Id_Lin_Comp }}" data-campo="val_pag" title="Clic para editar">{% if compra.Val_Pag != 0.0 %}{{ "%.2f"|format(compra.Val_Pag) }}{% endif %}</td>
                                 <td>{{ compra.Fec_Comp.strftime('%d/%m/%Y') if compra.Fec_Comp else '-' }}</td>
                                 <td>
                                     <a href="{{ url_for('delete_compra', id=compra.Id_Lin_Comp) }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Está seguro de eliminar esta compra?')">Eliminar</a>
