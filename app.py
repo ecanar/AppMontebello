@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timezone
 import os
 from dotenv import load_dotenv
-import google.generativeai as genai
+from openai import OpenAI
 
 # Cargar variables de entorno
 load_dotenv()
@@ -491,12 +491,14 @@ def consultas_ia():
     if request.method == 'POST':
         pregunta = request.form.get('pregunta', '').strip()
         try:
-            api_key = os.getenv('GEMINI_API_KEY')
+            api_key = os.getenv('OPENROUTER_API_KEY')
             if not api_key:
-                error = 'No se encontró la API Key de Gemini.'
+                error = 'No se encontró la API Key de OpenRouter.'
             else:
-                genai.configure(api_key=api_key)
-                model = genai.GenerativeModel('gemini-1.5-flash')
+                client = OpenAI(
+                    base_url='https://openrouter.ai/api/v1',
+                    api_key=api_key
+                )
 
                 historico = HistoricoCompra.query.order_by(HistoricoCompra.Fec_Comp.desc()).limit(100).all()
                 compras_hoy = CompraDia.query.all()
@@ -508,8 +510,11 @@ def consultas_ia():
                     contexto += f"- {r.Fec_Comp}: {r.producto_h.Nom_Prod}, cant={r.Cant_Comp}, valor=${r.Val_Pag}, proveedor={r.proveedor_h.Nom_Prov}\n"
 
                 prompt = f"{contexto}\nPregunta: {pregunta}"
-                response = model.generate_content(prompt)
-                respuesta = response.text
+                response = client.chat.completions.create(
+                    model='deepseek/deepseek-chat-v3-0324',
+                    messages=[{'role': 'user', 'content': prompt}]
+                )
+                respuesta = response.choices[0].message.content
         except Exception as e:
             error = f'Error al consultar IA: {str(e)}'
     return render_template('consultas_ia.html', respuesta=respuesta, error=error, pregunta=pregunta)
