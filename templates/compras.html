@@ -73,9 +73,15 @@
 
 {% block scripts %}
 <style>
-    .table td, .table th { padding: 0.25rem 0.5rem; font-size: 0.875rem; }
+    .table td, .table th { padding: 0.1rem 0.4rem; font-size: 0.78rem; line-height: 1.2; }
     .col-id { display: none; }
-    .col-producto { max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .col-producto {
+        max-width: 110px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        position: sticky; left: 0; z-index: 2;
+        background-color: #fff;
+    }
+    .table-striped tbody tr:nth-of-type(odd) .col-producto { background-color: #f2f2f2; }
+    .table thead .col-producto { background-color: #fff; z-index: 3; }
     .celda-editable { cursor: pointer; }
     .celda-editable:hover { background-color: #fff3cd; }
     .celda-editable input {
