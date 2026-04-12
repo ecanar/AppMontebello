@@ -18,6 +18,7 @@ if database_uri.startswith("postgres://"):
 
 app.config['SQLALCHEMY_DATABASE_URI'] = database_uri
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'pool_pre_ping': True}
 
 db = SQLAlchemy(app)
 
@@ -441,7 +442,10 @@ def transferir_pedidos():
     return redirect(url_for('compras'))
 
 with app.app_context():
-    db.create_all()
+    try:
+        db.create_all()
+    except Exception as e:
+        print(f'Advertencia al crear tablas: {e}')
 
 if __name__ == '__main__':
     # Railway asigna el puerto automáticamente en la variable de entorno PORT
