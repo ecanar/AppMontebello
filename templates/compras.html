@@ -47,8 +47,8 @@
                             <tr>
                                 <td class="col-id">{{ compra.Id_Lin_Comp }}</td>
                                 <td class="col-producto" title="{{ compra.producto.Nom_Prod }} ({{ compra.producto.Medida }})">{{ compra.producto.Nom_Prod }} ({{ compra.producto.Medida }})</td>
-                                <td>{{ compra.Cant_Ped }}</td>
-                                <td>{{ compra.Cant_Bod }}</td>
+                                <td>{{ compra.Cant_Ped if compra.Cant_Ped else '' }}</td>
+                                <td>{{ compra.Cant_Bod if compra.Cant_Bod else '' }}</td>
                                 <td class="celda-editable" data-id="{{ compra.Id_Lin_Comp }}" data-campo="cant_comp" title="Clic para editar">{{ compra.Cant_Comp if compra.Cant_Comp else '' }}</td>
                                 <td class="celda-editable" data-id="{{ compra.Id_Lin_Comp }}" data-campo="val_pag" title="Clic para editar">{{ "%.2f"|format(compra.Val_Pag) if compra.Val_Pag else '' }}</td>
                                 <td>{{ compra.Fec_Comp.strftime('%d/%m/%Y') if compra.Fec_Comp else '-' }}</td>
