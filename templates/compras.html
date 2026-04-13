@@ -25,7 +25,7 @@
                     <span id="total-val-pag" class="fw-bold fs-6">Total $ {{ "%.2f"|format(compras|sum(attribute='Val_Pag')) }}</span>
                     {% endif %}
                     <a href="{{ url_for('pedidos') }}" class="btn btn-sm" style="background-color:#90ee90; color:#1a1a1a; border-color:#90ee90;">Ir a Pedidos de Compra</a>
-                    <a href="{{ url_for('mover_historico') }}" class="btn btn-sm" style="background-color:#90ee90; color:#1a1a1a; border-color:#90ee90;" onclick="return confirm('¿Está seguro de mover todas las compras al histórico?')">Mover a Histórico</a>
+                    <a href="{{ url_for('mover_historico') }}" class="btn btn-sm" style="background-color:#ffe066; color:#1a1a1a; border-color:#ffe066;" onclick="return confirm('¿Está seguro de mover todas las compras al histórico?')">Mover a Histórico</a>
                 </div>
             </div>
             <div class="card-body">
