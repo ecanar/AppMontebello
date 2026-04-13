@@ -25,13 +25,9 @@
                         <label for="medida" class="form-label">Medida</label>
                         <select class="form-select" id="medida" name="medida" required>
                             <option value="">Seleccionar medida...</option>
-                            <option value="sac">Saco (sac)</option>
-                            <option value="lbs">Libras (lbs)</option>
-                            <option value="ata">Atado (ata)</option>
-                            <option value="rac">Racimo (rac)</option>
-                            <option value="cart">Cartón (cart)</option>
-                            <option value="uni">Unidad (uni)</option>
-                            <option value="cub">Cubeta (cub)</option>
+                            {% for m in medidas %}
+                            <option value="{{ m.Cod_Medida }}">{{ m.Nom_Medida }} ({{ m.Cod_Medida }})</option>
+                            {% endfor %}
                         </select>
                     </div>
                     <div class="mb-3">

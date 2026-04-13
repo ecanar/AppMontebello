@@ -107,6 +107,13 @@ class PedidoCompra(db.Model):
     # Relaciones
     producto_pedido = db.relationship('Producto', backref=db.backref('pedidos_compra', lazy=True))
 
+# Tabla de Medidas
+class Medida(db.Model):
+    __tablename__ = 'medidas'
+    id_Medida = db.Column(db.Integer, primary_key=True)
+    Cod_Medida = db.Column(db.String(10), nullable=False, unique=True)
+    Nom_Medida = db.Column(db.String(50), nullable=False)
+
 # Rutas principales
 @app.route('/')
 def index():
@@ -117,7 +124,8 @@ def index():
 def productos():
     productos = Producto.query.all()
     proveedores = Proveedor.query.all()
-    return render_template('productos.html', productos=productos, proveedores=proveedores)
+    medidas = Medida.query.order_by(Medida.Nom_Medida).all()
+    return render_template('productos.html', productos=productos, proveedores=proveedores, medidas=medidas)
 
 @app.route('/productos/add', methods=['POST'])
 def add_producto():
@@ -145,6 +153,7 @@ def add_producto():
 def edit_producto(id):
     producto = Producto.query.get_or_404(id)
     proveedores = Proveedor.query.all()
+    medidas = Medida.query.order_by(Medida.Nom_Medida).all()
     
     if request.method == 'POST':
         nombre = request.form.get('nombre')
@@ -153,7 +162,7 @@ def edit_producto(id):
         
         if not nombre or not medida or not id_prov:
             flash('Por favor complete todos los campos obligatorios.')
-            return render_template('edit_producto.html', producto=producto, proveedores=proveedores)
+            return render_template('edit_producto.html', producto=producto, proveedores=proveedores, medidas=medidas)
         
         try:
             producto.Nom_Prod = nombre
@@ -166,7 +175,7 @@ def edit_producto(id):
             db.session.rollback()
             flash(f'Error al actualizar producto: {str(e)}')
     
-    return render_template('edit_producto.html', producto=producto, proveedores=proveedores)
+    return render_template('edit_producto.html', producto=producto, proveedores=proveedores, medidas=medidas)
 
 @app.route('/productos/delete/<int:id>')
 def delete_producto(id):
@@ -329,6 +338,60 @@ def delete_compra(id):
         db.session.rollback()
         flash(f'Error al eliminar: {str(e)}')
     return redirect(url_for('compras'))
+
+# CRUD Medidas
+@app.route('/medidas')
+def medidas():
+    medidas = Medida.query.order_by(Medida.Nom_Medida).all()
+    return render_template('medidas.html', medidas=medidas)
+
+@app.route('/medidas/add', methods=['POST'])
+def add_medida():
+    cod = request.form.get('cod_medida', '').strip().lower()
+    nom = request.form.get('nom_medida', '').strip()
+    if not cod or not nom:
+        flash('Complete todos los campos.')
+        return redirect(url_for('medidas'))
+    try:
+        db.session.add(Medida(Cod_Medida=cod, Nom_Medida=nom))
+        db.session.commit()
+        flash('Medida agregada exitosamente!')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error: {str(e)}')
+    return redirect(url_for('medidas'))
+
+@app.route('/medidas/edit/<int:id>', methods=['GET', 'POST'])
+def edit_medida(id):
+    medida = Medida.query.get_or_404(id)
+    if request.method == 'POST':
+        cod = request.form.get('cod_medida', '').strip().lower()
+        nom = request.form.get('nom_medida', '').strip()
+        if not cod or not nom:
+            flash('Complete todos los campos.')
+            return render_template('edit_medida.html', medida=medida)
+        try:
+            medida.Cod_Medida = cod
+            medida.Nom_Medida = nom
+            db.session.commit()
+            flash('Medida actualizada!')
+            return redirect(url_for('medidas'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error: {str(e)}')
+    return render_template('edit_medida.html', medida=medida)
+
+@app.route('/medidas/delete/<int:id>')
+def delete_medida(id):
+    medida = Medida.query.get_or_404(id)
+    try:
+        db.session.delete(medida)
+        db.session.commit()
+        flash('Medida eliminada!')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al eliminar: {str(e)}')
+    return redirect(url_for('medidas'))
 
 # Histórico de Compras
 @app.route('/historico')

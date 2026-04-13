@@ -25,13 +25,9 @@
                         <label for="medida" class="form-label">Medida</label>
                         <select class="form-select" id="medida" name="medida" required>
                             <option value="">Seleccionar medida...</option>
-                            <option value="sac" {% if producto.Medida == 'sac' %}selected{% endif %}>Saco (sac)</option>
-                            <option value="lbs" {% if producto.Medida == 'lbs' %}selected{% endif %}>Libras (lbs)</option>
-                            <option value="ata" {% if producto.Medida == 'ata' %}selected{% endif %}>Atado (ata)</option>
-                            <option value="rac" {% if producto.Medida == 'rac' %}selected{% endif %}>Racimo (rac)</option>
-                            <option value="cart" {% if producto.Medida == 'cart' %}selected{% endif %}>Cartón (cart)</option>
-                            <option value="uni" {% if producto.Medida == 'uni' %}selected{% endif %}>Unidad (uni)</option>
-                            <option value="cub" {% if producto.Medida == 'cub' %}selected{% endif %}>Cubeta (cub)</option>
+                            {% for m in medidas %}
+                            <option value="{{ m.Cod_Medida }}" {% if producto.Medida == m.Cod_Medida %}selected{% endif %}>{{ m.Nom_Medida }} ({{ m.Cod_Medida }})</option>
+                            {% endfor %}
                         </select>
                     </div>
                     <div class="mb-3">

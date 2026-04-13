@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Medida - App Montebello{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2>Editar Medida</h2>
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header"><h5>Editar Medida</h5></div>
+            <div class="card-body">
+                <form action="{{ url_for('edit_medida', id=medida.id_Medida) }}" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Código</label>
+                        <input type="text" class="form-control" name="cod_medida" value="{{ medida.Cod_Medida }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nombre</label>
+                        <input type="text" class="form-control" name="nom_medida" value="{{ medida.Nom_Medida }}" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Actualizar</button>
+                    <a href="{{ url_for('medidas') }}" class="btn btn-secondary">Cancelar</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
