@@ -3,6 +3,7 @@ Flask-SQLAlchemy==3.0.5
 python-dotenv==1.0.0
 Flask-WTF==1.1.1
 WTForms==3.0.1
+Flask-Login==0.6.3
 gunicorn==23.0.0
 openai
 psycopg2-binary

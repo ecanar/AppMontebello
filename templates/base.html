@@ -70,7 +70,22 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('consultas_ia') }}">Consultas IA</a>
                     </li>
+                    {% if current_user.is_authenticated and current_user.es_admin %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('usuarios') }}">Usuarios</a>
+                    </li>
+                    {% endif %}
                 </ul>
+                {% if current_user.is_authenticated %}
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <span class="navbar-text me-3">{{ current_user.username }}</span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link btn btn-outline-light btn-sm px-3" href="{{ url_for('logout') }}">Salir</a>
+                    </li>
+                </ul>
+                {% endif %}
             </div>
         </div>
     </nav>

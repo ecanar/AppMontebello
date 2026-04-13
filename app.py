@@ -1,5 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+from functools import wraps
+from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import cast, Integer
 from datetime import datetime, timezone, timedelta
 import os
@@ -13,6 +16,10 @@ load_dotenv()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'default_secret_key')
+
+login_manager = LoginManager(app)
+login_manager.login_view = 'login'
+login_manager.login_message = 'Debes iniciar sesión para acceder a esta página.'
 
 # Configuración de la base de datos (Soporta Railway y Local)
 database_uri = os.getenv('DATABASE_URL', os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:///montebello.db'))
@@ -40,6 +47,38 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'pool_pre_ping': True}
 
 db = SQLAlchemy(app)
+
+# Modelo de Usuario
+class Usuario(db.Model, UserMixin):
+    __tablename__ = 'usuarios'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    password_hash = db.Column(db.String(256), nullable=False)
+    activo = db.Column(db.Boolean, default=True)
+    es_admin = db.Column(db.Boolean, default=False)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+    @property
+    def is_active(self):
+        return self.activo
+
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not current_user.is_authenticated or not current_user.es_admin:
+            flash('Acceso restringido a administradores.')
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated
+
+@login_manager.user_loader
+def load_user(user_id):
+    return Usuario.query.get(int(user_id))
 
 # Tabla de Productos
 class Producto(db.Model):
@@ -115,13 +154,37 @@ class Medida(db.Model):
     Cod_Medida = db.Column(db.String(10), nullable=False, unique=True)
     Nom_Medida = db.Column(db.String(50), nullable=False)
 
+# Rutas de autenticación
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '')
+        usuario = Usuario.query.filter_by(username=username).first()
+        if usuario and usuario.check_password(password) and usuario.activo:
+            login_user(usuario)
+            next_page = request.args.get('next')
+            return redirect(next_page or url_for('index'))
+        flash('Usuario o contraseña incorrectos.')
+    return render_template('login.html')
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('login'))
+
 # Rutas principales
 @app.route('/')
+@login_required
 def index():
     return render_template('index.html')
 
 # CRUD Productos
 @app.route('/productos')
+@login_required
 def productos():
     productos = Producto.query.order_by(Producto.Nom_Prod).all()
     proveedores = Proveedor.query.order_by(Proveedor.Nom_Prov).all()
@@ -129,6 +192,7 @@ def productos():
     return render_template('productos.html', productos=productos, proveedores=proveedores, medidas=medidas)
 
 @app.route('/productos/add', methods=['POST'])
+@login_required
 def add_producto():
     if request.method == 'POST':
         nombre = request.form.get('nombre')
@@ -151,6 +215,7 @@ def add_producto():
         return redirect(url_for('productos'))
 
 @app.route('/productos/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
 def edit_producto(id):
     producto = Producto.query.get_or_404(id)
     proveedores = Proveedor.query.order_by(Proveedor.Nom_Prov).all()
@@ -179,6 +244,7 @@ def edit_producto(id):
     return render_template('edit_producto.html', producto=producto, proveedores=proveedores, medidas=medidas)
 
 @app.route('/productos/delete/<int:id>')
+@login_required
 def delete_producto(id):
     producto = Producto.query.get_or_404(id)
     try:
@@ -192,11 +258,13 @@ def delete_producto(id):
 
 # CRUD Proveedores
 @app.route('/proveedores')
+@login_required
 def proveedores():
     proveedores = Proveedor.query.order_by(Proveedor.Nom_Prov).all()
     return render_template('proveedores.html', proveedores=proveedores)
 
 @app.route('/proveedores/add', methods=['POST'])
+@login_required
 def add_proveedor():
     if request.method == 'POST':
         nombre = request.form.get('nombre')
@@ -224,6 +292,7 @@ def add_proveedor():
         return redirect(url_for('proveedores'))
 
 @app.route('/proveedores/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
 def edit_proveedor(id):
     proveedor = Proveedor.query.get_or_404(id)
     
@@ -252,6 +321,7 @@ def edit_proveedor(id):
     return render_template('edit_proveedor.html', proveedor=proveedor)
 
 @app.route('/proveedores/delete/<int:id>')
+@login_required
 def delete_proveedor(id):
     proveedor = Proveedor.query.get_or_404(id)
     try:
@@ -265,6 +335,7 @@ def delete_proveedor(id):
 
 # Compras del Día
 @app.route('/compras')
+@login_required
 def compras():
     compras = CompraDia.query.join(Proveedor, CompraDia.Id_Prov == Proveedor.Id_Prov).order_by(cast(Proveedor.Num_Anden, Integer), cast(Proveedor.Num_Puesto, Integer)).all()
     productos = Producto.query.order_by(Producto.Nom_Prod).all()
@@ -272,6 +343,7 @@ def compras():
     return render_template('compras.html', compras=compras, productos=productos, proveedores=proveedores)
 
 @app.route('/compras/add', methods=['POST'])
+@login_required
 def add_compra():
     if request.method == 'POST':
         try:
@@ -317,6 +389,7 @@ def add_compra():
         return redirect(url_for('compras'))
 
 @app.route('/compras/update/<int:id>', methods=['POST'])
+@login_required
 def update_compra(id):
     compra = CompraDia.query.get_or_404(id)
     try:
@@ -333,6 +406,7 @@ def update_compra(id):
         return {'ok': False, 'error': str(e)}, 400
 
 @app.route('/compras/delete/<int:id>')
+@login_required
 def delete_compra(id):
     compra = CompraDia.query.get_or_404(id)
     try:
@@ -346,11 +420,13 @@ def delete_compra(id):
 
 # CRUD Medidas
 @app.route('/medidas')
+@login_required
 def medidas():
     medidas = Medida.query.order_by(Medida.Nom_Medida).all()
     return render_template('medidas.html', medidas=medidas)
 
 @app.route('/medidas/add', methods=['POST'])
+@login_required
 def add_medida():
     cod = request.form.get('cod_medida', '').strip().lower()
     nom = request.form.get('nom_medida', '').strip()
@@ -370,6 +446,7 @@ def add_medida():
     return redirect(url_for('medidas'))
 
 @app.route('/medidas/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
 def edit_medida(id):
     medida = Medida.query.get_or_404(id)
     if request.method == 'POST':
@@ -390,6 +467,7 @@ def edit_medida(id):
     return render_template('edit_medida.html', medida=medida)
 
 @app.route('/medidas/delete/<int:id>')
+@login_required
 def delete_medida(id):
     medida = Medida.query.get_or_404(id)
     try:
@@ -403,12 +481,14 @@ def delete_medida(id):
 
 # Histórico de Compras
 @app.route('/historico')
+@login_required
 def historico():
     historico = HistoricoCompra.query.order_by(HistoricoCompra.Id_Comp.desc(), HistoricoCompra.Id_Lin_Comp).all()
     return render_template('historico.html', historico=historico)
 
 # Mover compras del día a histórico
 @app.route('/mover_historico')
+@login_required
 def mover_historico():
     try:
         compras_hoy = CompraDia.query.all()
@@ -441,12 +521,14 @@ def mover_historico():
 
 # Pedidos de Compra
 @app.route('/pedidos')
+@login_required
 def pedidos():
     pedidos = PedidoCompra.query.join(Producto, PedidoCompra.Id_Prod == Producto.id_Prod).order_by(Producto.Nom_Prod).all()
     productos = Producto.query.order_by(Producto.Nom_Prod).all()
     return render_template('pedidos.html', pedidos=pedidos, productos=productos)
 
 @app.route('/pedidos/add', methods=['POST'])
+@login_required
 def add_pedido():
     if request.method == 'POST':
         try:
@@ -488,6 +570,7 @@ def add_pedido():
         return redirect(url_for('pedidos'))
 
 @app.route('/pedidos/delete/<int:id>')
+@login_required
 def delete_pedido(id):
     pedido = PedidoCompra.query.get_or_404(id)
     try:
@@ -500,6 +583,7 @@ def delete_pedido(id):
     return redirect(url_for('pedidos'))
 
 @app.route('/transferir_pedidos')
+@login_required
 def transferir_pedidos():
     try:
         pedidos_pendientes = PedidoCompra.query.all()
@@ -549,14 +633,134 @@ def transferir_pedidos():
         
     return redirect(url_for('compras'))
 
+# Gestión de Usuarios
+@app.route('/usuarios')
+@admin_required
+def usuarios():
+    usuarios = Usuario.query.order_by(Usuario.username).all()
+    return render_template('usuarios.html', usuarios=usuarios)
+
+@app.route('/usuarios/add', methods=['POST'])
+@admin_required
+def add_usuario():
+    username = request.form.get('username', '').strip()
+    password = request.form.get('password', '')
+    if not username or not password:
+        flash('Usuario y contraseña son obligatorios.')
+        return redirect(url_for('usuarios'))
+    if Usuario.query.filter_by(username=username).first():
+        flash(f'El usuario "{username}" ya existe.')
+        return redirect(url_for('usuarios'))
+    try:
+        nuevo = Usuario(username=username)
+        nuevo.set_password(password)
+        db.session.add(nuevo)
+        db.session.commit()
+        flash(f'Usuario "{username}" creado exitosamente!')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al crear usuario: {str(e)}')
+    return redirect(url_for('usuarios'))
+
+@app.route('/usuarios/cambiar_password/<int:id>', methods=['POST'])
+@admin_required
+def cambiar_password(id):
+    usuario = Usuario.query.get_or_404(id)
+    password = request.form.get('password', '')
+    if not password:
+        flash('La contraseña no puede estar vacía.')
+        return redirect(url_for('usuarios'))
+    try:
+        usuario.set_password(password)
+        db.session.commit()
+        flash(f'Contraseña de "{usuario.username}" actualizada!')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error: {str(e)}')
+    return redirect(url_for('usuarios'))
+
+@app.route('/usuarios/toggle/<int:id>')
+@admin_required
+def toggle_usuario(id):
+    usuario = Usuario.query.get_or_404(id)
+    if usuario.username == 'admin' and current_user.id == usuario.id:
+        flash('No podés desactivar tu propio usuario admin.')
+        return redirect(url_for('usuarios'))
+    try:
+        usuario.activo = not usuario.activo
+        db.session.commit()
+        estado = 'activado' if usuario.activo else 'desactivado'
+        flash(f'Usuario "{usuario.username}" {estado}.')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error: {str(e)}')
+    return redirect(url_for('usuarios'))
+
+@app.route('/usuarios/toggle_admin/<int:id>')
+@admin_required
+def toggle_admin(id):
+    usuario = Usuario.query.get_or_404(id)
+    if usuario.id == current_user.id:
+        flash('No podés cambiar tus propios permisos de admin.')
+        return redirect(url_for('usuarios'))
+    try:
+        usuario.es_admin = not usuario.es_admin
+        db.session.commit()
+        estado = 'otorgado' if usuario.es_admin else 'quitado'
+        flash(f'Permiso admin {estado} a "{usuario.username}".')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error: {str(e)}')
+    return redirect(url_for('usuarios'))
+
+@app.route('/usuarios/delete/<int:id>')
+@admin_required
+def delete_usuario(id):
+    usuario = Usuario.query.get_or_404(id)
+    if usuario.id == current_user.id:
+        flash('No podés eliminar tu propio usuario.')
+        return redirect(url_for('usuarios'))
+    try:
+        db.session.delete(usuario)
+        db.session.commit()
+        flash(f'Usuario "{usuario.username}" eliminado.')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error: {str(e)}')
+    return redirect(url_for('usuarios'))
+
 with app.app_context():
     try:
         db.create_all()
+        # Migración: agregar columna es_admin si no existe
+        try:
+            from sqlalchemy import inspect, text
+            inspector = inspect(db.engine)
+            cols = [c['name'] for c in inspector.get_columns('usuarios')]
+            if 'es_admin' not in cols:
+                with db.engine.connect() as conn:
+                    conn.execute(text('ALTER TABLE usuarios ADD COLUMN es_admin BOOLEAN DEFAULT FALSE'))
+                    conn.commit()
+                print('Migración: columna es_admin agregada.')
+        except Exception as me:
+            print(f'Migración es_admin: {me}')
+        if not Usuario.query.filter_by(username='admin').first():
+            admin = Usuario(username='admin', es_admin=True)
+            admin.set_password('admin123')
+            db.session.add(admin)
+            db.session.commit()
+            print('Usuario admin creado con contraseña: admin123')
+        else:
+            admin = Usuario.query.filter_by(username='admin').first()
+            if not admin.es_admin:
+                admin.es_admin = True
+                db.session.commit()
     except Exception as e:
         print(f'Advertencia al crear tablas: {e}')
 
 
 @app.route('/consultas-ia', methods=['GET', 'POST'])
+@login_required
 def consultas_ia():
     respuesta = None
     error = None

@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Usuarios - App Montebello{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Nuevo Usuario</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('add_usuario') }}">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre de usuario</label>
+                        <input type="text" name="username" class="form-control" required autocomplete="off">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Contraseña</label>
+                        <input type="password" name="password" class="form-control" required autocomplete="new-password">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Crear Usuario</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Usuarios Registrados</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Usuario</th>
+                                <th>Estado</th>
+                                <th>Admin</th>
+                                <th>Nueva Contraseña</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for u in usuarios %}
+                            <tr>
+                                <td>{{ u.id }}</td>
+                                <td><strong>{{ u.username }}</strong></td>
+                                <td>
+                                    {% if u.activo %}
+                                        <span class="badge bg-success">Activo</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Inactivo</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if u.id != current_user.id %}
+                                    <a href="{{ url_for('toggle_admin', id=u.id) }}"
+                                       class="btn btn-sm {% if u.es_admin %}btn-primary{% else %}btn-outline-secondary{% endif %}"
+                                       onclick="return confirm('¿Cambiar permisos de admin para {{ u.username }}?')"
+                                       title="{% if u.es_admin %}Quitar admin{% else %}Dar admin{% endif %}">
+                                        {% if u.es_admin %}Admin ✓{% else %}Admin{% endif %}
+                                    </a>
+                                    {% else %}
+                                        <span class="badge bg-primary">Admin ✓</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <form method="POST" action="{{ url_for('cambiar_password', id=u.id) }}" class="d-flex gap-1">
+                                        <input type="password" name="password" class="form-control form-control-sm" placeholder="Nueva contraseña" autocomplete="new-password">
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary" title="Cambiar contraseña">✓</button>
+                                    </form>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('toggle_usuario', id=u.id) }}"
+                                       class="btn btn-sm {% if u.activo %}btn-warning{% else %}btn-success{% endif %} me-1"
+                                       onclick="return confirm('¿Confirmar cambio de estado?')">
+                                        {% if u.activo %}Desactivar{% else %}Activar{% endif %}
+                                    </a>
+                                    {% if u.id != current_user.id %}
+                                    <a href="{{ url_for('delete_usuario', id=u.id) }}"
+                                       class="btn btn-sm btn-danger"
+                                       onclick="return confirm('¿Eliminar usuario {{ u.username }}?')">
+                                        Eliminar
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-3">No hay usuarios registrados.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
