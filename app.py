@@ -573,7 +573,7 @@ def consultas_ia():
                     api_key=api_key
                 )
 
-                historico = HistoricoCompra.query.order_by(HistoricoCompra.Id_Comp.desc()).all()
+                historico = HistoricoCompra.query.order_by(HistoricoCompra.Id_Comp.desc()).limit(500).all()
                 compras_hoy = CompraDia.query.all()
                 proveedores_list = Proveedor.query.order_by(Proveedor.Nom_Prov).all()
                 productos_list = Producto.query.order_by(Producto.Nom_Prod).all()
