@@ -575,8 +575,16 @@ def consultas_ia():
 
                 historico = HistoricoCompra.query.order_by(HistoricoCompra.Fec_Comp.desc()).limit(100).all()
                 compras_hoy = CompraDia.query.all()
+                proveedores_list = Proveedor.query.order_by(Proveedor.Nom_Prov).all()
+                productos_list = Producto.query.order_by(Producto.Nom_Prod).all()
 
-                contexto = "Datos de compras del día actual (pendientes de confirmar valores):\n"
+                contexto = "Lista de proveedores registrados:\n"
+                for p in proveedores_list:
+                    contexto += f"- {p.Nom_Prov}, Andén={p.Num_Anden}, Puesto={p.Num_Puesto}\n"
+                contexto += "\nLista de productos registrados:\n"
+                for p in productos_list:
+                    contexto += f"- {p.Nom_Prod} ({p.Medida})\n"
+                contexto += "\nDatos de compras del día actual (pendientes de confirmar valores):\n"
                 for r in compras_hoy:
                     contexto += f"- Comp={r.Id_Comp}, Fecha={r.Fec_Comp}, Producto={r.producto.Nom_Prod} ({r.producto.Medida}), cant_pedida={r.Cant_Ped}, cant_comprada={r.Cant_Comp}, valor=${r.Val_Pag}, proveedor={r.proveedor_compra.Nom_Prov}\n"
                 contexto += "\nHistórico de compras anteriores:\n"
