@@ -507,15 +507,24 @@ def consultas_ia():
 
                 contexto = "Datos de compras del día actual (pendientes de confirmar valores):\n"
                 for r in compras_hoy:
-                    contexto += f"- {r.Fec_Comp}: {r.producto.Nom_Prod}, cant_pedida={r.Cant_Ped}, cant_comprada={r.Cant_Comp}, valor=${r.Val_Pag}, proveedor={r.proveedor_compra.Nom_Prov}\n"
+                    contexto += f"- Comp={r.Id_Comp}, Fecha={r.Fec_Comp}, Producto={r.producto.Nom_Prod}, cant_pedida={r.Cant_Ped}, cant_comprada={r.Cant_Comp}, valor=${r.Val_Pag}, proveedor={r.proveedor_compra.Nom_Prov}\n"
                 contexto += "\nHistórico de compras anteriores:\n"
                 for r in historico:
-                    contexto += f"- {r.Fec_Comp}: {r.producto_h.Nom_Prod}, cant_pedida={r.Cant_Ped}, cant_comprada={r.Cant_Comp}, valor=${r.Val_Pag}, proveedor={r.proveedor_h.Nom_Prov}\n"
+                    contexto += f"- Comp={r.Id_Comp}, Fecha={r.Fec_Comp}, Producto={r.producto_h.Nom_Prod}, cant_pedida={r.Cant_Ped}, cant_comprada={r.Cant_Comp}, valor=${r.Val_Pag}, proveedor={r.proveedor_h.Nom_Prov}\n"
 
+                sistema = (
+                    "Eres un asistente de una app de compras de mercado. "
+                    "Responde SIEMPRE en español, de forma clara y concisa. "
+                    "El campo 'Id_Comp' o 'Comp' es el número de compra que agrupa todos los productos comprados en una misma salida al mercado. "
+                    "Nunca mezcles otros idiomas. No incluyas explicaciones técnicas ni notas al pie."
+                )
                 prompt = f"{contexto}\nPregunta: {pregunta}"
                 response = client.chat.completions.create(
                     model='deepseek/deepseek-chat-v3-0324',
-                    messages=[{'role': 'user', 'content': prompt}]
+                    messages=[
+                        {'role': 'system', 'content': sistema},
+                        {'role': 'user', 'content': prompt}
+                    ]
                 )
                 respuesta = response.choices[0].message.content
         except Exception as e:
