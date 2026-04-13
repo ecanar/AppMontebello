@@ -193,7 +193,7 @@ def delete_producto(id):
 # CRUD Proveedores
 @app.route('/proveedores')
 def proveedores():
-    proveedores = Proveedor.query.order_by(cast(Proveedor.Num_Anden, Integer), cast(Proveedor.Num_Puesto, Integer)).all()
+    proveedores = Proveedor.query.order_by(Proveedor.Nom_Prov).all()
     return render_template('proveedores.html', proveedores=proveedores)
 
 @app.route('/proveedores/add', methods=['POST'])
