@@ -731,19 +731,15 @@ def delete_usuario(id):
 
 with app.app_context():
     try:
-        db.create_all()
-        # Migración: agregar columna es_admin si no existe
+        # Migración previa: agregar es_admin ANTES de que el ORM intente usarla
         try:
-            from sqlalchemy import inspect, text
-            inspector = inspect(db.engine)
-            cols = [c['name'] for c in inspector.get_columns('usuarios')]
-            if 'es_admin' not in cols:
-                with db.engine.connect() as conn:
-                    conn.execute(text('ALTER TABLE usuarios ADD COLUMN es_admin BOOLEAN DEFAULT FALSE'))
-                    conn.commit()
-                print('Migración: columna es_admin agregada.')
-        except Exception as me:
-            print(f'Migración es_admin: {me}')
+            from sqlalchemy import text
+            with db.engine.connect() as conn:
+                conn.execute(text('ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS es_admin BOOLEAN DEFAULT FALSE'))
+                conn.commit()
+        except Exception:
+            pass  # La tabla aún no existe; db.create_all() la crea con la columna
+        db.create_all()
         if not Usuario.query.filter_by(username='admin').first():
             admin = Usuario(username='admin', es_admin=True)
             admin.set_password('admin123')
