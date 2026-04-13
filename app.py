@@ -123,7 +123,7 @@ def index():
 # CRUD Productos
 @app.route('/productos')
 def productos():
-    productos = Producto.query.all()
+    productos = Producto.query.order_by(Producto.Nom_Prod).all()
     proveedores = Proveedor.query.all()
     medidas = Medida.query.order_by(Medida.Nom_Medida).all()
     return render_template('productos.html', productos=productos, proveedores=proveedores, medidas=medidas)
