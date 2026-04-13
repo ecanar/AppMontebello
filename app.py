@@ -507,10 +507,10 @@ def consultas_ia():
 
                 contexto = "Datos de compras del día actual (pendientes de confirmar valores):\n"
                 for r in compras_hoy:
-                    contexto += f"- Comp={r.Id_Comp}, Fecha={r.Fec_Comp}, Producto={r.producto.Nom_Prod}, cant_pedida={r.Cant_Ped}, cant_comprada={r.Cant_Comp}, valor=${r.Val_Pag}, proveedor={r.proveedor_compra.Nom_Prov}\n"
+                    contexto += f"- Comp={r.Id_Comp}, Fecha={r.Fec_Comp}, Producto={r.producto.Nom_Prod} ({r.producto.Medida}), cant_pedida={r.Cant_Ped}, cant_comprada={r.Cant_Comp}, valor=${r.Val_Pag}, proveedor={r.proveedor_compra.Nom_Prov}\n"
                 contexto += "\nHistórico de compras anteriores:\n"
                 for r in historico:
-                    contexto += f"- Comp={r.Id_Comp}, Fecha={r.Fec_Comp}, Producto={r.producto_h.Nom_Prod}, cant_pedida={r.Cant_Ped}, cant_comprada={r.Cant_Comp}, valor=${r.Val_Pag}, proveedor={r.proveedor_h.Nom_Prov}\n"
+                    contexto += f"- Comp={r.Id_Comp}, Fecha={r.Fec_Comp}, Producto={r.producto_h.Nom_Prod} ({r.producto_h.Medida}), cant_pedida={r.Cant_Ped}, cant_comprada={r.Cant_Comp}, valor=${r.Val_Pag}, proveedor={r.proveedor_h.Nom_Prov}\n"
 
                 sistema = (
                     "Eres un asistente de una app de compras de mercado. "
