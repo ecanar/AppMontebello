@@ -352,6 +352,9 @@ def add_medida():
     if not cod or not nom:
         flash('Complete todos los campos.')
         return redirect(url_for('medidas'))
+    if Medida.query.filter_by(Cod_Medida=cod).first():
+        flash(f'El código "{cod}" ya existe. Use otro código o edite la medida existente.')
+        return redirect(url_for('medidas'))
     try:
         db.session.add(Medida(Cod_Medida=cod, Nom_Medida=nom))
         db.session.commit()
