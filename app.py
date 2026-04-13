@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import cast, Integer
 from datetime import datetime, timezone, timedelta
 import os
 from dotenv import load_dotenv
@@ -192,7 +193,7 @@ def delete_producto(id):
 # CRUD Proveedores
 @app.route('/proveedores')
 def proveedores():
-    proveedores = Proveedor.query.order_by(Proveedor.Num_Anden, Proveedor.Num_Puesto).all()
+    proveedores = Proveedor.query.order_by(cast(Proveedor.Num_Anden, Integer), cast(Proveedor.Num_Puesto, Integer)).all()
     return render_template('proveedores.html', proveedores=proveedores)
 
 @app.route('/proveedores/add', methods=['POST'])
