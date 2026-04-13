@@ -1,9 +1,11 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import os
 from dotenv import load_dotenv
 from openai import OpenAI
+
+TZ_COLOMBIA = timezone(timedelta(hours=-5))
 
 # Cargar variables de entorno
 load_dotenv()
@@ -63,7 +65,7 @@ class CompraDia(db.Model):
     __tablename__ = 'compras_dia'
     Id_Lin_Comp = db.Column(db.Integer, primary_key=True)
     Id_Comp = db.Column(db.Integer, nullable=False)
-    Fec_Comp = db.Column(db.Date, nullable=False, default=lambda: datetime.now(timezone.utc).date())
+    Fec_Comp = db.Column(db.Date, nullable=False, default=lambda: datetime.now(TZ_COLOMBIA).date())
     Id_Prod = db.Column(db.Integer, db.ForeignKey('productos.id_Prod'), nullable=False)
     Cant_Ped = db.Column(db.Float, nullable=False)
     Cant_Bod = db.Column(db.Float, nullable=False)
@@ -100,7 +102,7 @@ class PedidoCompra(db.Model):
     Id_Prod = db.Column(db.Integer, db.ForeignKey('productos.id_Prod'), nullable=False)
     Cant_Ped = db.Column(db.Float, nullable=False)
     Cant_Bod = db.Column(db.Float, nullable=False)
-    Fec_Ped = db.Column(db.Date, nullable=False, default=lambda: datetime.now(timezone.utc).date())
+    Fec_Ped = db.Column(db.Date, nullable=False, default=lambda: datetime.now(TZ_COLOMBIA).date())
     
     # Relaciones
     producto_pedido = db.relationship('Producto', backref=db.backref('pedidos_compra', lazy=True))
@@ -331,7 +333,7 @@ def delete_compra(id):
 # Histórico de Compras
 @app.route('/historico')
 def historico():
-    historico = HistoricoCompra.query.order_by(HistoricoCompra.Fec_Comp.desc()).all()
+    historico = HistoricoCompra.query.order_by(HistoricoCompra.Id_Comp.desc(), HistoricoCompra.Id_Lin_Comp).all()
     return render_template('historico.html', historico=historico)
 
 # Mover compras del día a histórico
@@ -436,7 +438,7 @@ def transferir_pedidos():
             return redirect(url_for('compras'))
         
         # Si ya hay compras hoy, reutilizar el mismo Id_Comp (es la misma compra del día)
-        hoy = datetime.now(timezone.utc).date()
+        hoy = datetime.now(TZ_COLOMBIA).date()
         compra_hoy = CompraDia.query.filter_by(Fec_Comp=hoy).first()
         
         if compra_hoy:
