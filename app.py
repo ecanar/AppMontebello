@@ -503,11 +503,12 @@ def consultas_ia():
                 historico = HistoricoCompra.query.order_by(HistoricoCompra.Fec_Comp.desc()).limit(100).all()
                 compras_hoy = CompraDia.query.all()
 
-                contexto = "Datos de compras recientes:\n"
+                contexto = "Datos de compras del día actual (pendientes de confirmar valores):\n"
                 for r in compras_hoy:
-                    contexto += f"- Hoy: {r.producto.Nom_Prod}, cant_pedida={r.Cant_Ped}, cant_comprada={r.Cant_Comp}, valor=${r.Val_Pag}\n"
+                    contexto += f"- {r.Fec_Comp}: {r.producto.Nom_Prod}, cant_pedida={r.Cant_Ped}, cant_comprada={r.Cant_Comp}, valor=${r.Val_Pag}, proveedor={r.proveedor_compra.Nom_Prov}\n"
+                contexto += "\nHistórico de compras anteriores:\n"
                 for r in historico:
-                    contexto += f"- {r.Fec_Comp}: {r.producto_h.Nom_Prod}, cant={r.Cant_Comp}, valor=${r.Val_Pag}, proveedor={r.proveedor_h.Nom_Prov}\n"
+                    contexto += f"- {r.Fec_Comp}: {r.producto_h.Nom_Prod}, cant_pedida={r.Cant_Ped}, cant_comprada={r.Cant_Comp}, valor=${r.Val_Pag}, proveedor={r.proveedor_h.Nom_Prov}\n"
 
                 prompt = f"{contexto}\nPregunta: {pregunta}"
                 response = client.chat.completions.create(
