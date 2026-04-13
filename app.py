@@ -206,6 +206,10 @@ def add_proveedor():
         if not nombre or not cedula:
             flash('Nombre y Cédula son campos obligatorios.')
             return redirect(url_for('proveedores'))
+
+        if Proveedor.query.filter(Proveedor.Nom_Prov.ilike(nombre)).first():
+            flash(f'El proveedor "{nombre}" ya existe.')
+            return redirect(url_for('proveedores'))
             
         try:
             nuevo_proveedor = Proveedor(Nom_Prov=nombre, Num_Ced=cedula, Num_Anden=anden, Num_Puesto=puesto)
