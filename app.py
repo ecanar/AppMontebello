@@ -124,7 +124,7 @@ def index():
 @app.route('/productos')
 def productos():
     productos = Producto.query.order_by(Producto.Nom_Prod).all()
-    proveedores = Proveedor.query.all()
+    proveedores = Proveedor.query.order_by(Proveedor.Nom_Prov).all()
     medidas = Medida.query.order_by(Medida.Nom_Medida).all()
     return render_template('productos.html', productos=productos, proveedores=proveedores, medidas=medidas)
 
@@ -153,7 +153,7 @@ def add_producto():
 @app.route('/productos/edit/<int:id>', methods=['GET', 'POST'])
 def edit_producto(id):
     producto = Producto.query.get_or_404(id)
-    proveedores = Proveedor.query.all()
+    proveedores = Proveedor.query.order_by(Proveedor.Nom_Prov).all()
     medidas = Medida.query.order_by(Medida.Nom_Medida).all()
     
     if request.method == 'POST':
