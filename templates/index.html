@@ -6,19 +6,25 @@
 
 <div class="row mt-4 g-3 justify-content-center">
     <div class="col-md-2 d-grid">
+        <a href="{{ url_for('pedidos') }}" class="btn btn-primary btn-lg py-4">Pedidos</a>
+    </div>
+    <div class="col-md-2 d-grid">
+        <a href="{{ url_for('compras') }}" class="btn btn-primary btn-lg py-4">Compras</a>
+    </div>
+    <div class="col-md-2 d-grid">
+        <a href="{{ url_for('medidas') }}" class="btn btn-primary btn-lg py-4">Medidas</a>
+    </div>
+    <div class="col-md-2 d-grid">
         <a href="{{ url_for('productos') }}" class="btn btn-primary btn-lg py-4">Productos</a>
     </div>
     <div class="col-md-2 d-grid">
         <a href="{{ url_for('proveedores') }}" class="btn btn-primary btn-lg py-4">Proveedores</a>
     </div>
     <div class="col-md-2 d-grid">
-        <a href="{{ url_for('pedidos') }}" class="btn btn-primary btn-lg py-4">Pedidos de Compra</a>
-    </div>
-    <div class="col-md-2 d-grid">
-        <a href="{{ url_for('compras') }}" class="btn btn-primary btn-lg py-4">Compras del Día</a>
-    </div>
-    <div class="col-md-2 d-grid">
         <a href="{{ url_for('historico') }}" class="btn btn-primary btn-lg py-4">Histórico</a>
+    </div>
+    <div class="col-md-2 d-grid">
+        <a href="{{ url_for('consultas_ia') }}" class="btn btn-primary btn-lg py-4">Consultas IA</a>
     </div>
 </div>
 {% endblock %}
