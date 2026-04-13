@@ -23,8 +23,8 @@
                                 <th>Comp</th>
                                 <th>Fecha</th>
                                 <th>Producto</th>
-                                <th>Pedida</th>
                                 <th>Comprada</th>
+                                <th>Pedida</th>
                                 <th>Bodega</th>
                                 <th>Pagado</th>
                                 <th>Proveedor</th>
@@ -36,8 +36,8 @@
                                 <td>{{ registro.Id_Comp }}</td>
                                 <td>{{ registro.Fec_Comp.strftime('%d/%m/%Y') if registro.Fec_Comp else '-' }}</td>
                                 <td>{{ registro.producto_h.Nom_Prod }} ({{ registro.producto_h.Medida }})</td>
-                                <td>{{ registro.Cant_Ped }}</td>
                                 <td>{{ registro.Cant_Comp }}</td>
+                                <td>{{ registro.Cant_Ped }}</td>
                                 <td>{{ registro.Cant_Bod }}</td>
                                 <td>${{ "%.2f"|format(registro.Val_Pag) }}</td>
                                 <td>{{ registro.proveedor_h.Nom_Prov }}</td>
