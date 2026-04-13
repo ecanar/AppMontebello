@@ -591,7 +591,7 @@ def consultas_ia():
                 )
                 prompt = f"{contexto}\nPregunta: {pregunta}"
                 response = client.chat.completions.create(
-                    model='deepseek/deepseek-chat-v3-0324',
+                    model='openai/gpt-4o-mini',
                     messages=[
                         {'role': 'system', 'content': sistema},
                         {'role': 'user', 'content': prompt}
