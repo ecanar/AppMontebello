@@ -573,21 +573,25 @@ def consultas_ia():
                     api_key=api_key
                 )
 
-                historico = HistoricoCompra.query.order_by(HistoricoCompra.Fec_Comp.desc()).limit(100).all()
+                historico = HistoricoCompra.query.order_by(HistoricoCompra.Id_Comp.desc()).all()
                 compras_hoy = CompraDia.query.all()
                 proveedores_list = Proveedor.query.order_by(Proveedor.Nom_Prov).all()
                 productos_list = Producto.query.order_by(Producto.Nom_Prod).all()
+                pedidos_list = PedidoCompra.query.order_by(PedidoCompra.Fec_Ped.desc()).all()
 
                 contexto = "Lista de proveedores registrados:\n"
                 for p in proveedores_list:
                     contexto += f"- {p.Nom_Prov}, Andén={p.Num_Anden}, Puesto={p.Num_Puesto}\n"
                 contexto += "\nLista de productos registrados:\n"
                 for p in productos_list:
-                    contexto += f"- {p.Nom_Prod} ({p.Medida})\n"
-                contexto += "\nDatos de compras del día actual (pendientes de confirmar valores):\n"
+                    contexto += f"- {p.Nom_Prod} ({p.Medida}), proveedor={p.proveedor.Nom_Prov}\n"
+                contexto += "\nPedidos de compra pendientes:\n"
+                for r in pedidos_list:
+                    contexto += f"- Fecha={r.Fec_Ped}, Producto={r.producto_pedido.Nom_Prod}, cant_pedida={r.Cant_Ped}, cant_bodega={r.Cant_Bod}\n"
+                contexto += "\nCompras del día actual:\n"
                 for r in compras_hoy:
                     contexto += f"- Comp={r.Id_Comp}, Fecha={r.Fec_Comp}, Producto={r.producto.Nom_Prod} ({r.producto.Medida}), cant_pedida={r.Cant_Ped}, cant_comprada={r.Cant_Comp}, valor=${r.Val_Pag}, proveedor={r.proveedor_compra.Nom_Prov}\n"
-                contexto += "\nHistórico de compras anteriores:\n"
+                contexto += "\nHistórico de todas las compras:\n"
                 for r in historico:
                     contexto += f"- Comp={r.Id_Comp}, Fecha={r.Fec_Comp}, Producto={r.producto_h.Nom_Prod} ({r.producto_h.Medida}), cant_pedida={r.Cant_Ped}, cant_comprada={r.Cant_Comp}, valor=${r.Val_Pag}, proveedor={r.proveedor_h.Nom_Prov}\n"
 
