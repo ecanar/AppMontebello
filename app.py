@@ -443,7 +443,7 @@ def mover_historico():
 @app.route('/pedidos')
 def pedidos():
     pedidos = PedidoCompra.query.order_by(PedidoCompra.Id_Lista.desc()).all()
-    productos = Producto.query.all()
+    productos = Producto.query.order_by(Producto.Nom_Prod).all()
     return render_template('pedidos.html', pedidos=pedidos, productos=productos)
 
 @app.route('/pedidos/add', methods=['POST'])
