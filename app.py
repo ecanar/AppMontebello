@@ -633,6 +633,27 @@ def transferir_pedidos():
         
     return redirect(url_for('compras'))
 
+# Cambiar propia contraseña
+@app.route('/mi-cuenta', methods=['GET', 'POST'])
+@login_required
+def mi_cuenta():
+    if request.method == 'POST':
+        actual = request.form.get('password_actual', '')
+        nueva = request.form.get('password_nueva', '')
+        confirmar = request.form.get('password_confirmar', '')
+        if not current_user.check_password(actual):
+            flash('La contraseña actual es incorrecta.')
+        elif not nueva:
+            flash('La nueva contraseña no puede estar vacía.')
+        elif nueva != confirmar:
+            flash('La nueva contraseña y la confirmación no coinciden.')
+        else:
+            current_user.set_password(nueva)
+            db.session.commit()
+            flash('Contraseña actualizada exitosamente!')
+            return redirect(url_for('index'))
+    return render_template('mi_cuenta.html')
+
 # Gestión de Usuarios
 @app.route('/usuarios')
 @admin_required

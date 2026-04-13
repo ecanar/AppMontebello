@@ -79,7 +79,7 @@
                 {% if current_user.is_authenticated %}
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <span class="navbar-text me-3">{{ current_user.username }}</span>
+                        <a class="nav-link me-2" href="{{ url_for('mi_cuenta') }}">{{ current_user.username }} 🔑</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link btn btn-outline-light btn-sm px-3" href="{{ url_for('logout') }}">Salir</a>

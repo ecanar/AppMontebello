@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Mi Cuenta - App Montebello{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Cambiar mi Contraseña</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Contraseña actual</label>
+                        <div class="input-group">
+                            <input type="password" name="password_actual" class="form-control pwd-input" required autocomplete="current-password">
+                            <button type="button" class="btn btn-outline-secondary toggle-pwd" title="Mostrar/ocultar">👁</button>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nueva contraseña</label>
+                        <div class="input-group">
+                            <input type="password" name="password_nueva" class="form-control pwd-input" required autocomplete="new-password">
+                            <button type="button" class="btn btn-outline-secondary toggle-pwd" title="Mostrar/ocultar">👁</button>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Confirmar nueva contraseña</label>
+                        <div class="input-group">
+                            <input type="password" name="password_confirmar" class="form-control pwd-input" required autocomplete="new-password">
+                            <button type="button" class="btn btn-outline-secondary toggle-pwd" title="Mostrar/ocultar">👁</button>
+                        </div>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Actualizar Contraseña</button>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.querySelectorAll('.toggle-pwd').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var input = this.closest('.input-group').querySelector('.pwd-input');
+            if (input.type === 'password') {
+                input.type = 'text';
+                this.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                this.textContent = '👁';
+            }
+        });
+    });
+</script>
+{% endblock %}
