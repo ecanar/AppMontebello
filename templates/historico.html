@@ -34,7 +34,7 @@
                             {% for registro in historico %}
                             <tr>
                                 <td>{{ registro.Id_Comp }}</td>
-                                <td>{{ registro.Fec_Comp.strftime('%d/%m/%Y') if registro.Fec_Comp else '-' }}</td>
+                                <td>{{ registro.Fec_Comp.strftime('%d/%m/%y') if registro.Fec_Comp else '-' }}</td>
                                 <td>{{ registro.producto_h.Nom_Prod }} ({{ registro.producto_h.Medida }})</td>
                                 <td>{{ registro.Cant_Comp }}</td>
                                 <td>{{ registro.Cant_Ped }}</td>
