@@ -16,7 +16,10 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Contraseña</label>
-                        <input type="password" name="password" class="form-control" required autocomplete="new-password">
+                        <div class="input-group">
+                            <input type="password" name="password" class="form-control pwd-input" required autocomplete="new-password">
+                            <button type="button" class="btn btn-outline-secondary toggle-pwd" title="Mostrar/ocultar">👁</button>
+                        </div>
                     </div>
                     <button type="submit" class="btn btn-primary w-100">Crear Usuario</button>
                 </form>
@@ -68,7 +71,10 @@
                                 </td>
                                 <td>
                                     <form method="POST" action="{{ url_for('cambiar_password', id=u.id) }}" class="d-flex gap-1">
-                                        <input type="password" name="password" class="form-control form-control-sm" placeholder="Nueva contraseña" autocomplete="new-password">
+                                        <div class="input-group input-group-sm">
+                                            <input type="password" name="password" class="form-control form-control-sm pwd-input" placeholder="Nueva contraseña" autocomplete="new-password">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm toggle-pwd" title="Mostrar/ocultar">👁</button>
+                                        </div>
                                         <button type="submit" class="btn btn-sm btn-outline-secondary" title="Cambiar contraseña">✓</button>
                                     </form>
                                 </td>
@@ -99,4 +105,21 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.querySelectorAll('.toggle-pwd').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var input = this.closest('.input-group').querySelector('.pwd-input');
+            if (input.type === 'password') {
+                input.type = 'text';
+                this.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                this.textContent = '👁';
+            }
+        });
+    });
+</script>
 {% endblock %}

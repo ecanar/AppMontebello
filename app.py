@@ -740,16 +740,24 @@ with app.app_context():
         except Exception:
             pass  # La tabla aún no existe; db.create_all() la crea con la columna
         db.create_all()
-        if not Usuario.query.filter_by(username='admin').first():
+        admin_pwd = os.getenv('ADMIN_PASSWORD', 'admin123')
+        admin = Usuario.query.filter_by(username='admin').first()
+        if not admin:
             admin = Usuario(username='admin', es_admin=True)
-            admin.set_password('admin123')
+            admin.set_password(admin_pwd)
             db.session.add(admin)
             db.session.commit()
-            print('Usuario admin creado con contraseña: admin123')
+            print('Usuario admin creado.')
         else:
-            admin = Usuario.query.filter_by(username='admin').first()
+            changed = False
             if not admin.es_admin:
                 admin.es_admin = True
+                changed = True
+            if os.getenv('ADMIN_PASSWORD'):
+                admin.set_password(admin_pwd)
+                changed = True
+                print('Contraseña admin reseteada desde ADMIN_PASSWORD.')
+            if changed:
                 db.session.commit()
     except Exception as e:
         print(f'Advertencia al crear tablas: {e}')
