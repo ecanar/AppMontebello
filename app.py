@@ -266,9 +266,9 @@ def delete_proveedor(id):
 # Compras del Día
 @app.route('/compras')
 def compras():
-    compras = CompraDia.query.all()
-    productos = Producto.query.all()
-    proveedores = Proveedor.query.all()
+    compras = CompraDia.query.join(Proveedor, CompraDia.Id_Prov == Proveedor.Id_Prov).order_by(cast(Proveedor.Num_Anden, Integer), cast(Proveedor.Num_Puesto, Integer)).all()
+    productos = Producto.query.order_by(Producto.Nom_Prod).all()
+    proveedores = Proveedor.query.order_by(Proveedor.Nom_Prov).all()
     return render_template('compras.html', compras=compras, productos=productos, proveedores=proveedores)
 
 @app.route('/compras/add', methods=['POST'])
@@ -442,7 +442,7 @@ def mover_historico():
 # Pedidos de Compra
 @app.route('/pedidos')
 def pedidos():
-    pedidos = PedidoCompra.query.order_by(PedidoCompra.Id_Lista.desc()).all()
+    pedidos = PedidoCompra.query.join(Producto, PedidoCompra.Id_Prod == Producto.id_Prod).order_by(Producto.Nom_Prod).all()
     productos = Producto.query.order_by(Producto.Nom_Prod).all()
     return render_template('pedidos.html', pedidos=pedidos, productos=productos)
 
