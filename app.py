@@ -976,13 +976,31 @@ def consultas_ia():
 def analisis():
     MESES_ES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
 
-    registros = HistoricoCompra.query.order_by(HistoricoCompra.Fec_Comp).all()
+    fec_ini_str = request.args.get('fec_ini', '').strip()
+    fec_fin_str = request.args.get('fec_fin', '').strip()
+    modo = request.args.get('modo', 'compra')
+    if modo not in ('compra', 'mes'):
+        modo = 'compra'
+    try:
+        fec_ini = datetime.strptime(fec_ini_str, '%Y-%m-%d').date() if fec_ini_str else None
+    except ValueError:
+        fec_ini = None; fec_ini_str = ''
+    try:
+        fec_fin = datetime.strptime(fec_fin_str, '%Y-%m-%d').date() if fec_fin_str else None
+    except ValueError:
+        fec_fin = None; fec_fin_str = ''
 
+    todos = HistoricoCompra.query.order_by(HistoricoCompra.Fec_Comp).all()
+    registros = [r for r in todos
+                 if (fec_ini is None or r.Fec_Comp >= fec_ini)
+                 and (fec_fin is None or r.Fec_Comp <= fec_fin)]
+
+    extra = dict(active_mode=modo, fec_ini_val=fec_ini_str, fec_fin_val=fec_fin_str)
     empty = dict(sin_datos=True, total_gasto=0, n_semanas=0, n_productos=0,
                  n_proveedores=0, n_compras=0,
                  data_compra='{}', data_semana='{}', data_mes='{}',
                  top_productos='[]', top_frec='[]', top_proveedores='[]',
-                 bod_top='[]', precio_evolucion_prods='[]')
+                 bod_top='[]', precio_evolucion_prods='[]', **extra)
     if not registros:
         return render_template('analisis.html', **empty)
 
@@ -1075,6 +1093,9 @@ def analisis():
         top_proveedores=json.dumps([[p[0], round(p[1],2)] for p in top_proveedores]),
         bod_top=json.dumps([[p[0], p[1]] for p in bod_top]),
         precio_evolucion_prods=json.dumps(top5_prods),
+        active_mode=modo,
+        fec_ini_val=fec_ini_str,
+        fec_fin_val=fec_fin_str,
     )
 
 

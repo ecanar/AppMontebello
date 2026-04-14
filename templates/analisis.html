@@ -6,67 +6,65 @@
 <div class="row mb-2">
     <div class="col">
         <h2>Análisis de Compras</h2>
-        <p class="text-muted mb-2">Indicadores agrupados por semana ISO (S01/25 = semana 1 del 2025)</p>
+        <p class="text-muted mb-2">Filtra por rango de fechas y elige agrupar por N° Compra o por Mes</p>
+    </div>
+</div>
+
+<!-- Filtros de fecha -->
+<div class="row g-2 mb-3">
+    <div class="col-md-6">
+        <div class="card border-primary">
+            <div class="card-body py-2">
+                <div class="fw-semibold text-primary small mb-1">Rango x N° Compra</div>
+                <form method="GET" action="{{ url_for('analisis') }}" class="d-flex flex-wrap gap-2 align-items-end">
+                    <input type="hidden" name="modo" value="compra">
+                    <div>
+                        <label class="form-label form-label-sm mb-0">Desde</label>
+                        <input type="date" name="fec_ini" class="form-control form-control-sm"
+                            value="{{ fec_ini_val if active_mode == 'compra' else '' }}">
+                    </div>
+                    <div>
+                        <label class="form-label form-label-sm mb-0">Hasta</label>
+                        <input type="date" name="fec_fin" class="form-control form-control-sm"
+                            value="{{ fec_fin_val if active_mode == 'compra' else '' }}">
+                    </div>
+                    <div class="d-flex gap-1 align-items-end">
+                        <button type="submit" class="btn btn-sm btn-primary">Buscar</button>
+                        {% if active_mode == 'compra' and fec_ini_val %}<a href="{{ url_for('analisis') }}" class="btn btn-sm btn-outline-secondary">✕</a>{% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card border-success">
+            <div class="card-body py-2">
+                <div class="fw-semibold text-success small mb-1">Rango x Mes</div>
+                <form method="GET" action="{{ url_for('analisis') }}" class="d-flex flex-wrap gap-2 align-items-end">
+                    <input type="hidden" name="modo" value="mes">
+                    <div>
+                        <label class="form-label form-label-sm mb-0">Desde</label>
+                        <input type="date" name="fec_ini" class="form-control form-control-sm"
+                            value="{{ fec_ini_val if active_mode == 'mes' else '' }}">
+                    </div>
+                    <div>
+                        <label class="form-label form-label-sm mb-0">Hasta</label>
+                        <input type="date" name="fec_fin" class="form-control form-control-sm"
+                            value="{{ fec_fin_val if active_mode == 'mes' else '' }}">
+                    </div>
+                    <div class="d-flex gap-1 align-items-end">
+                        <button type="submit" class="btn btn-sm btn-success">Buscar</button>
+                        {% if active_mode == 'mes' and fec_ini_val %}<a href="{{ url_for('analisis') }}" class="btn btn-sm btn-outline-secondary">✕</a>{% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
 
 {% if sin_datos %}
 <div class="alert alert-warning">No hay datos en el histórico para analizar.</div>
 {% else %}
-
-<!-- Tarjetas resumen -->
-<div class="row g-2 mb-4">
-    <div class="col-6 col-md">
-        <div class="card text-center border-primary h-100">
-            <div class="card-body py-2 px-1">
-                <div class="fw-bold text-primary fs-6">${{ "{:,.0f}".format(total_gasto) }}</div>
-                <small class="text-muted">Gasto Total</small>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-md">
-        <div class="card text-center border-success h-100">
-            <div class="card-body py-2 px-1">
-                <div class="fw-bold text-success fs-6">{{ n_semanas }}</div>
-                <small class="text-muted">Semanas</small>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-md">
-        <div class="card text-center border-warning h-100">
-            <div class="card-body py-2 px-1">
-                <div class="fw-bold text-warning fs-6">{{ n_productos }}</div>
-                <small class="text-muted">Productos</small>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-md">
-        <div class="card text-center border-info h-100">
-            <div class="card-body py-2 px-1">
-                <div class="fw-bold text-info fs-6">{{ n_proveedores }}</div>
-                <small class="text-muted">Proveedores</small>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-md">
-        <div class="card text-center border-danger h-100">
-            <div class="card-body py-2 px-1">
-                <div class="fw-bold text-danger fs-6">{{ n_compras }}</div>
-                <small class="text-muted">N° Compras</small>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Selector de agrupación -->
-<div class="d-flex align-items-center gap-2 mb-3">
-    <span class="fw-semibold">Ver por:</span>
-    <div class="btn-group" role="group">
-        <button type="button" class="btn btn-sm btn-primary active" id="btnCompra" onclick="setMode('compra')">N° Compra</button>
-        <button type="button" class="btn btn-sm btn-outline-primary" id="btnMes" onclick="setMode('mes')">Mes</button>
-    </div>
-    <small class="text-muted" id="modeLabel">Agrupado por N° de compra</small>
-</div>
 
 <!-- Tabs -->
 <ul class="nav nav-tabs mb-3" id="analysisTabs" role="tablist">
@@ -81,6 +79,9 @@
     </li>
     <li class="nav-item" role="presentation">
         <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-cumplimiento" type="button" role="tab">Cumplimiento</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-informes" type="button" role="tab">Informes</button>
     </li>
 </ul>
 
@@ -193,6 +194,65 @@
                     <div id="cont-salidas" style="height:300px;">
                         <canvas id="chartSalidas"></canvas>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB INFORMES -->
+    <div class="tab-pane fade" id="tab-informes" role="tabpanel">
+        <div class="row g-2 mb-3 mt-1">
+            <div class="col-6 col-md">
+                <div class="card text-center border-primary h-100">
+                    <div class="card-body py-2 px-1">
+                        <div class="fw-bold text-primary fs-6">${{ "{:,.0f}".format(total_gasto) }}</div>
+                        <small class="text-muted">Gasto Total</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md">
+                <div class="card text-center border-success h-100">
+                    <div class="card-body py-2 px-1">
+                        <div class="fw-bold text-success fs-6">{{ n_semanas }}</div>
+                        <small class="text-muted">Semanas</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md">
+                <div class="card text-center border-warning h-100">
+                    <div class="card-body py-2 px-1">
+                        <div class="fw-bold text-warning fs-6">{{ n_productos }}</div>
+                        <small class="text-muted">Productos</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md">
+                <div class="card text-center border-info h-100">
+                    <div class="card-body py-2 px-1">
+                        <div class="fw-bold text-info fs-6">{{ n_proveedores }}</div>
+                        <small class="text-muted">Proveedores</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md">
+                <div class="card text-center border-danger h-100">
+                    <div class="card-body py-2 px-1">
+                        <div class="fw-bold text-danger fs-6">{{ n_compras }}</div>
+                        <small class="text-muted">N° Compras</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0">Resumen por Período</h6></div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped" id="tablaInformes">
+                        <thead class="table-dark">
+                            <tr><th>Período</th><th>Gasto ($)</th><th>Salidas</th><th>Cumpl. (%)</th></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -318,17 +378,6 @@ function setMode(mode) {
     const d = ALL_DATA[mode];
     const n = d.labels.length;
 
-    // Actualizar etiqueta
-    document.getElementById('modeLabel').textContent = MODE_LABELS[mode];
-
-    // Botones
-    ['compra','mes'].forEach(m => {
-        const btn = document.getElementById('btn' + m.charAt(0).toUpperCase() + m.slice(1));
-        btn.className = m === mode
-            ? 'btn btn-sm btn-primary active'
-            : 'btn btn-sm btn-outline-primary';
-    });
-
     // Gasto
     setScrollWidth('cont-gasto-sem', n);
     chartGasto.data.labels = d.labels;
@@ -424,8 +473,21 @@ new Chart(document.getElementById('chartProveedores'), {
     });
 })();
 
-/* ---- Cargar con modo compra por defecto ---- */
-setMode('compra');
+/* ---- Cargar modo activo y poblar tabla Informes ---- */
+setMode('{{ active_mode }}');
+(function() {
+    const d = ALL_DATA['{{ active_mode }}'];
+    const tbody = document.querySelector('#tablaInformes tbody');
+    if (!tbody || !d || !d.labels) return;
+    d.labels.forEach((lbl, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${lbl}</td>`
+            + `<td>$${d.gasto[i].toLocaleString('es-CO',{minimumFractionDigits:0})}</td>`
+            + `<td>${d.salidas[i]}</td>`
+            + `<td>${d.cumpl[i]}%</td>`;
+        tbody.appendChild(tr);
+    });
+})();
 </script>
 {% endif %}
 {% endblock %}
