@@ -62,11 +62,10 @@
 <div class="d-flex align-items-center gap-2 mb-3">
     <span class="fw-semibold">Ver por:</span>
     <div class="btn-group" role="group">
-        <button type="button" class="btn btn-sm btn-outline-primary" id="btnCompra" onclick="setMode('compra')">N° Compra</button>
-        <button type="button" class="btn btn-sm btn-primary active" id="btnSemana" onclick="setMode('semana')">Semana</button>
+        <button type="button" class="btn btn-sm btn-primary active" id="btnCompra" onclick="setMode('compra')">N° Compra</button>
         <button type="button" class="btn btn-sm btn-outline-primary" id="btnMes" onclick="setMode('mes')">Mes</button>
     </div>
-    <small class="text-muted" id="modeLabel">Agrupado por semana ISO</small>
+    <small class="text-muted" id="modeLabel">Agrupado por N° de compra</small>
 </div>
 
 <!-- Tabs -->
@@ -283,7 +282,7 @@ function setMode(mode) {
     document.getElementById('modeLabel').textContent = MODE_LABELS[mode];
 
     // Botones
-    ['compra','semana','mes'].forEach(m => {
+    ['compra','mes'].forEach(m => {
         const btn = document.getElementById('btn' + m.charAt(0).toUpperCase() + m.slice(1));
         btn.className = m === mode
             ? 'btn btn-sm btn-primary active'
@@ -375,8 +374,8 @@ new Chart(document.getElementById('chartProveedores'), {
     });
 })();
 
-/* ---- Cargar con modo semana por defecto ---- */
-setMode('semana');
+/* ---- Cargar con modo compra por defecto ---- */
+setMode('compra');
 </script>
 {% endif %}
 {% endblock %}
