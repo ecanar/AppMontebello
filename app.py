@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from functools import wraps
@@ -8,6 +8,7 @@ from datetime import datetime, timezone, timedelta
 import os
 import json
 from collections import defaultdict
+from io import BytesIO
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -101,6 +102,7 @@ class Proveedor(db.Model):
     Num_Ced = db.Column(db.String(20), nullable=False)
     Num_Anden = db.Column(db.String(10))
     Num_Puesto = db.Column(db.String(10))
+    Alias = db.Column(db.String(100))
 
 # Tabla Compras del Día
 class CompraDia(db.Model):
@@ -283,7 +285,8 @@ def add_proveedor():
             return redirect(url_for('proveedores'))
             
         try:
-            nuevo_proveedor = Proveedor(Nom_Prov=nombre, Num_Ced=cedula, Num_Anden=anden, Num_Puesto=puesto)
+            alias = request.form.get('alias', '').strip() or None
+            nuevo_proveedor = Proveedor(Nom_Prov=nombre, Num_Ced=cedula, Num_Anden=anden, Num_Puesto=puesto, Alias=alias)
             db.session.add(nuevo_proveedor)
             db.session.commit()
             flash('Proveedor agregado exitosamente!')
@@ -313,6 +316,7 @@ def edit_proveedor(id):
             proveedor.Num_Ced = cedula
             proveedor.Num_Anden = anden
             proveedor.Num_Puesto = puesto
+            proveedor.Alias = request.form.get('alias', '').strip() or None
             db.session.commit()
             flash('Proveedor actualizado exitosamente!')
             return redirect(url_for('proveedores'))
@@ -342,7 +346,11 @@ def compras():
     compras = CompraDia.query.join(Proveedor, CompraDia.Id_Prov == Proveedor.Id_Prov).order_by(cast(Proveedor.Num_Anden, Integer), cast(Proveedor.Num_Puesto, Integer)).all()
     productos = Producto.query.order_by(Producto.Nom_Prod).all()
     proveedores = Proveedor.query.order_by(Proveedor.Nom_Prov).all()
-    return render_template('compras.html', compras=compras, productos=productos, proveedores=proveedores)
+    hoy = datetime.now(TZ_COLOMBIA).date()
+    primera = CompraDia.query.first()
+    fec_compras = primera.Fec_Comp if primera else hoy
+    return render_template('compras.html', compras=compras, productos=productos, proveedores=proveedores,
+                           fec_compras=fec_compras, hoy=hoy)
 
 @app.route('/compras/add', methods=['POST'])
 @login_required
@@ -488,21 +496,120 @@ def historico():
     historico = HistoricoCompra.query.order_by(HistoricoCompra.Id_Comp.desc(), HistoricoCompra.Id_Lin_Comp).all()
     return render_template('historico.html', historico=historico)
 
+@app.route('/historico/plantilla')
+@login_required
+def historico_plantilla():
+    import openpyxl
+    from openpyxl.styles import Font
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Compras'
+    headers = ['Fecha (YYYY-MM-DD)', 'Producto', 'Proveedor', 'Cant_Ped', 'Cant_Comp', 'Cant_Bod', 'Val_Pag']
+    ws.append(headers)
+    for cell in ws[1]:
+        cell.font = Font(bold=True)
+    for col in ws.columns:
+        ws.column_dimensions[col[0].column_letter].width = 20
+    ws2 = wb.create_sheet('Productos Válidos')
+    ws2.append(['Nombre Producto', 'Medida'])
+    for p in Producto.query.order_by(Producto.Nom_Prod).all():
+        ws2.append([p.Nom_Prod, p.Medida])
+    ws3 = wb.create_sheet('Proveedores Válidos')
+    ws3.append(['Nombre Proveedor'])
+    for p in Proveedor.query.order_by(Proveedor.Nom_Prov).all():
+        ws3.append([p.Nom_Prov])
+    buf = BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return send_file(buf, as_attachment=True, download_name='plantilla_historico.xlsx',
+                     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+@app.route('/historico/importar', methods=['POST'])
+@login_required
+def historico_importar():
+    import openpyxl
+    if 'archivo' not in request.files:
+        flash('No se seleccionó archivo.')
+        return redirect(url_for('historico'))
+    archivo = request.files['archivo']
+    if not archivo.filename.endswith('.xlsx'):
+        flash('Solo se aceptan archivos .xlsx')
+        return redirect(url_for('historico'))
+    try:
+        wb = openpyxl.load_workbook(archivo)
+        ws = wb.active
+        ultimo_hist = HistoricoCompra.query.order_by(HistoricoCompra.Id_Comp.desc()).first()
+        ultimo_dia  = CompraDia.query.order_by(CompraDia.Id_Comp.desc()).first()
+        base_id = max(
+            ultimo_hist.Id_Comp if ultimo_hist else 0,
+            ultimo_dia.Id_Comp  if ultimo_dia  else 0
+        )
+        fecha_to_id = {}
+        errores = []
+        importados = 0
+        for i, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+            if not any(row):
+                continue
+            fecha_raw, nom_prod, nom_prov, cant_ped, cant_comp, cant_bod, val_pag = (list(row) + [None]*7)[:7]
+            if isinstance(fecha_raw, datetime):
+                fecha = fecha_raw.date()
+            else:
+                try:
+                    fecha = datetime.strptime(str(fecha_raw).strip(), '%Y-%m-%d').date()
+                except Exception:
+                    errores.append(f'Fila {i}: fecha inválida "{fecha_raw}"')
+                    continue
+            if fecha not in fecha_to_id:
+                base_id += 1
+                fecha_to_id[fecha] = base_id
+            id_comp = fecha_to_id[fecha]
+            producto = Producto.query.filter(Producto.Nom_Prod.ilike(str(nom_prod or '').strip())).first()
+            if not producto:
+                errores.append(f'Fila {i}: producto "{nom_prod}" no encontrado')
+                continue
+            proveedor = Proveedor.query.filter(Proveedor.Nom_Prov.ilike(str(nom_prov or '').strip())).first()
+            if not proveedor:
+                errores.append(f'Fila {i}: proveedor "{nom_prov}" no encontrado')
+                continue
+            db.session.add(HistoricoCompra(
+                Id_Comp=id_comp, Fec_Comp=fecha, Id_Prod=producto.id_Prod,
+                Cant_Ped=float(cant_ped or 0), Cant_Comp=float(cant_comp or 0),
+                Cant_Bod=float(cant_bod or 0), Val_Pag=float(val_pag or 0),
+                Id_Prov=proveedor.Id_Prov
+            ))
+            importados += 1
+        db.session.commit()
+        msg = f'{importados} registros importados.'
+        if errores:
+            msg += ' Errores: ' + '; '.join(errores[:5])
+            if len(errores) > 5:
+                msg += f' ... y {len(errores)-5} más.'
+        flash(msg)
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al importar: {str(e)}')
+    return redirect(url_for('historico'))
+
 # Mover compras del día a histórico
-@app.route('/mover_historico')
+@app.route('/mover_historico', methods=['POST'])
 @login_required
 def mover_historico():
     try:
         compras_hoy = CompraDia.query.all()
-        
         if not compras_hoy:
             flash('No hay compras para mover al histórico.')
             return redirect(url_for('compras'))
-            
+
+        fecha_str = request.form.get('fecha_real', '')
+        try:
+            fecha_real = datetime.strptime(fecha_str, '%Y-%m-%d').date()
+        except ValueError:
+            fecha_real = datetime.now(TZ_COLOMBIA).date()
+
         for compra in compras_hoy:
             historico_registro = HistoricoCompra(
                 Id_Comp=compra.Id_Comp,
-                Fec_Comp=compra.Fec_Comp,
+                Fec_Comp=fecha_real,
                 Id_Prod=compra.Id_Prod,
                 Cant_Ped=compra.Cant_Ped,
                 Cant_Comp=compra.Cant_Comp,
@@ -511,14 +618,14 @@ def mover_historico():
                 Id_Prov=compra.Id_Prov
             )
             db.session.add(historico_registro)
-        
+
         CompraDia.query.delete()
         db.session.commit()
         flash('Compras movidas al histórico exitosamente!')
     except Exception as e:
         db.session.rollback()
         flash(f'Error al mover al histórico: {str(e)}')
-        
+
     return redirect(url_for('compras'))
 
 # Pedidos de Compra
@@ -527,7 +634,13 @@ def mover_historico():
 def pedidos():
     pedidos = PedidoCompra.query.join(Producto, PedidoCompra.Id_Prod == Producto.id_Prod).order_by(Producto.Nom_Prod).all()
     productos = Producto.query.order_by(Producto.Nom_Prod).all()
-    return render_template('pedidos.html', pedidos=pedidos, productos=productos)
+    primera_compra = CompraDia.query.first()
+    hay_compras = primera_compra is not None
+    id_comp_actual = primera_compra.Id_Comp if primera_compra else None
+    n_compras_actual = CompraDia.query.count()
+    return render_template('pedidos.html', pedidos=pedidos, productos=productos,
+                           hay_compras=hay_compras, id_comp_actual=id_comp_actual,
+                           n_compras_actual=n_compras_actual)
 
 @app.route('/pedidos/add', methods=['POST'])
 @login_required
@@ -589,50 +702,57 @@ def delete_pedido(id):
 def transferir_pedidos():
     try:
         pedidos_pendientes = PedidoCompra.query.all()
-        
         if not pedidos_pendientes:
             flash('No hay pedidos pendientes para transferir.')
             return redirect(url_for('compras'))
-        
-        # Si ya hay compras hoy, reutilizar el mismo Id_Comp (es la misma compra del día)
+
+        nueva = request.args.get('nueva')   # None | '0' | '1'
+        borrar = request.args.get('borrar', '0') == '1'
         hoy = datetime.now(TZ_COLOMBIA).date()
-        compra_hoy = CompraDia.query.filter_by(Fec_Comp=hoy).first()
-        
-        if compra_hoy:
-            id_comp = compra_hoy.Id_Comp
+        hay_compras = CompraDia.query.count() > 0
+
+        if hay_compras and nueva is None:
+            flash('Hay ítems en la lista de Compras. Confirme la acción desde la página de Pedidos.')
+            return redirect(url_for('pedidos'))
+
+        if hay_compras and nueva == '0':
+            id_comp = CompraDia.query.first().Id_Comp
         else:
-            ultima_compra_dia = CompraDia.query.order_by(CompraDia.Id_Comp.desc()).first()
-            ultimo_historico = HistoricoCompra.query.order_by(HistoricoCompra.Id_Comp.desc()).first()
-            id_max_dia = ultima_compra_dia.Id_Comp if ultima_compra_dia else 0
-            id_max_hist = ultimo_historico.Id_Comp if ultimo_historico else 0
-            id_comp = max(id_max_dia, id_max_hist) + 1
-        
+            ultima_dia  = CompraDia.query.order_by(CompraDia.Id_Comp.desc()).first()
+            ultimo_hist = HistoricoCompra.query.order_by(HistoricoCompra.Id_Comp.desc()).first()
+            id_comp = max(
+                ultima_dia.Id_Comp  if ultima_dia  else 0,
+                ultimo_hist.Id_Comp if ultimo_hist else 0
+            ) + 1
+            if hay_compras and borrar:
+                CompraDia.query.delete()
+                db.session.flush()
+
         transferidos = 0
         for pedido in pedidos_pendientes:
             producto = Producto.query.get(pedido.Id_Prod)
             if not producto:
                 continue
-                
-            id_prov = producto.Id_Prov
             nueva_compra = CompraDia(
-                Id_Comp=id_comp, # Se usa el mismo Id_Comp para todos los productos de esta transferencia
+                Id_Comp=id_comp,
+                Fec_Comp=hoy,
                 Id_Prod=pedido.Id_Prod,
                 Cant_Ped=pedido.Cant_Ped,
                 Cant_Bod=pedido.Cant_Bod,
                 Cant_Comp=0,
                 Val_Pag=0,
-                Id_Prov=id_prov
+                Id_Prov=producto.Id_Prov
             )
             db.session.add(nueva_compra)
             transferidos += 1
-        
+
         PedidoCompra.query.delete()
         db.session.commit()
-        flash(f'Se han transferido {transferidos} pedidos a la Compra Num: {id_comp}.')
+        flash(f'Se han transferido {transferidos} pedidos a la Compra Nº {id_comp}.')
     except Exception as e:
         db.session.rollback()
         flash(f'Error al transferir pedidos: {str(e)}')
-        
+
     return redirect(url_for('compras'))
 
 # Cambiar propia contraseña
@@ -762,6 +882,12 @@ with app.app_context():
                 conn.commit()
         except Exception:
             pass  # La tabla aún no existe; db.create_all() la crea con la columna
+        try:
+            with db.engine.connect() as conn:
+                conn.execute(text('ALTER TABLE proveedores ADD COLUMN IF NOT EXISTS "Alias" VARCHAR(100)'))
+                conn.commit()
+        except Exception:
+            pass
         db.create_all()
         admin_pwd = os.getenv('ADMIN_PASSWORD', 'admin123')
         admin = Usuario.query.filter_by(username='admin').first()

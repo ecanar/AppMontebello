@@ -26,7 +26,9 @@
                     <span id="total-val-pag" class="fw-bold fs-6">Total $ {{ "%.2f"|format(compras|sum(attribute='Val_Pag')) }}</span>
                     {% endif %}
                     <a href="{{ url_for('pedidos') }}" class="btn btn-sm" style="background-color:#90ee90; color:#1a1a1a; border-color:#90ee90;">Ir a Pedidos de Compra</a>
-                    <a href="{{ url_for('mover_historico') }}" class="btn btn-sm" style="background-color:#ffe066; color:#1a1a1a; border-color:#ffe066;" onclick="return confirm('¿Está seguro de mover todas las compras al histórico?')">Mover a Histórico</a>
+                    {% if compras %}
+                    <button type="button" class="btn btn-sm" style="background-color:#ffe066;color:#1a1a1a;border-color:#ffe066;" data-bs-toggle="modal" data-bs-target="#modalHistorico">Mover a Histórico</button>
+                    {% endif %}
                 </div>
             </div>
             <div class="card-body">
@@ -68,6 +70,36 @@
     </div>
 </div>
 {% endblock %}
+
+<!-- Modal: confirmar fecha antes de mover a histórico -->
+{% if compras %}
+<div class="modal fade" id="modalHistorico" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="{{ url_for('mover_historico') }}">
+        <div class="modal-header">
+          <h5 class="modal-title">Mover a Histórico</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          {% if fec_compras != hoy %}
+          <div class="alert alert-warning mb-2">
+            La fecha de la lista de Compras (<strong>{{ fec_compras }}</strong>) es distinta al día de hoy (<strong>{{ hoy }}</strong>).
+          </div>
+          {% endif %}
+          <label class="form-label fw-semibold">Fecha con que se registrará en el Histórico:</label>
+          <input type="date" name="fecha_real" class="form-control"
+                 value="{{ fec_compras }}" required>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-warning">Confirmar y Mover</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
 
 {% block scripts %}
 <style>

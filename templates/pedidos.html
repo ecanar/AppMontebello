@@ -45,7 +45,11 @@
                 <h5>Lista de Pedidos de Compra</h5>
                 <div class="d-flex gap-2">
                     <a href="{{ url_for('compras') }}" class="btn btn-sm btn-info">Ir a Compras del Día</a>
-                    <a href="{{ url_for('transferir_pedidos') }}" class="btn btn-sm btn-success" onclick="return confirm('¿Está seguro de transferir todos los pedidos a Compras del Día?')">Transferir Compras</a>
+                    {% if hay_compras %}
+                    <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#modalTransferir">Transferir Compras</button>
+                    {% else %}
+                    <a href="{{ url_for('transferir_pedidos') }}" class="btn btn-sm btn-success">Transferir Compras</a>
+                    {% endif %}
                 </div>
             </div>
             <div class="card-body">
@@ -82,5 +86,55 @@
         </div>
     </div>
 </div>
+
+{% if hay_compras %}
+<!-- Modal: hay compras activas -->
+<div class="modal fade" id="modalTransferir" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Lista de Compras no está vacía</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>Ya hay <strong>{{ n_compras_actual }} ítem(s)</strong> en la lista de Compras
+        (Nº <strong>{{ id_comp_actual }}</strong>).</p>
+        <p>¿Qué desea hacer con los pedidos nuevos?</p>
+      </div>
+      <div class="modal-footer flex-column gap-2 align-items-stretch">
+        <a href="{{ url_for('transferir_pedidos', nueva=0) }}" class="btn btn-outline-primary">
+          Continuar con la misma compra (Nº {{ id_comp_actual }})
+        </a>
+        <button type="button" class="btn btn-warning" id="btnNuevaCompra">Compra nueva</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Modal: confirmar borrar lista actual -->
+<div class="modal fade" id="modalBorrar" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Compra nueva</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>¿Desea <strong>borrar</strong> los {{ n_compras_actual }} ítem(s) actuales
+        (Nº {{ id_comp_actual }}) para iniciar con una lista nueva?</p>
+      </div>
+      <div class="modal-footer">
+        <a href="{{ url_for('transferir_pedidos', nueva=1, borrar=1) }}" class="btn btn-danger">Sí, borrar lista actual</a>
+        <a href="{{ url_for('transferir_pedidos', nueva=1, borrar=0) }}" class="btn btn-secondary">No, conservar lista actual</a>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+document.getElementById('btnNuevaCompra').addEventListener('click', function() {
+    bootstrap.Modal.getInstance(document.getElementById('modalTransferir')).hide();
+    new bootstrap.Modal(document.getElementById('modalBorrar')).show();
+});
+</script>
+{% endif %}
 
 {% endblock %}

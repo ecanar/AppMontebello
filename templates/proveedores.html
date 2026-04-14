@@ -33,6 +33,10 @@
                         <label for="puesto" class="form-label">Número de Puesto</label>
                         <input type="text" class="form-control" id="puesto" name="puesto">
                     </div>
+                    <div class="mb-3">
+                        <label for="alias" class="form-label">Alias</label>
+                        <input type="text" class="form-control" id="alias" name="alias">
+                    </div>
                     <button type="submit" class="btn btn-primary">Agregar Proveedor</button>
                 </form>
             </div>
@@ -49,6 +53,7 @@
                         <thead>
                             <tr>
                                 <th>Nombre</th>
+                                <th>Alias</th>
                                 <th>Cédula</th>
                                 <th>Andén</th>
                                 <th>Puesto</th>
@@ -59,6 +64,7 @@
                             {% for proveedor in proveedores %}
                             <tr>
                                 <td>{{ proveedor.Nom_Prov }}</td>
+                                <td>{{ proveedor.Alias or '-' }}</td>
                                 <td>{{ proveedor.Num_Ced }}</td>
                                 <td>{{ proveedor.Num_Anden or '-' }}</td>
                                 <td>{{ proveedor.Num_Puesto or '-' }}</td>

@@ -33,6 +33,10 @@
                         <label for="puesto" class="form-label">Número de Puesto</label>
                         <input type="text" class="form-control" id="puesto" name="puesto" value="{{ proveedor.Num_Puesto or '' }}">
                     </div>
+                    <div class="mb-3">
+                        <label for="alias" class="form-label">Alias</label>
+                        <input type="text" class="form-control" id="alias" name="alias" value="{{ proveedor.Alias or '' }}">
+                    </div>
                     <button type="submit" class="btn btn-primary">Actualizar Proveedor</button>
                     <a href="{{ url_for('proveedores') }}" class="btn btn-secondary">Cancelar</a>
                 </form>

@@ -12,8 +12,15 @@
 <div class="row mt-3">
     <div class="col-md-12">
         <div class="card">
-            <div class="card-header">
-                <h5>Historial de Todas las Compras</h5>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Historial de Todas las Compras</h5>
+                <div class="d-flex gap-2 align-items-center">
+                    <a href="{{ url_for('historico_plantilla') }}" class="btn btn-sm btn-outline-success">&#8659; Plantilla Excel</a>
+                    <form method="POST" action="{{ url_for('historico_importar') }}" enctype="multipart/form-data" class="d-flex gap-1 align-items-center">
+                        <input type="file" name="archivo" accept=".xlsx" class="form-control form-control-sm" style="max-width:180px;" required>
+                        <button type="submit" class="btn btn-sm btn-outline-primary">&#8657; Importar</button>
+                    </form>
+                </div>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -22,6 +29,7 @@
                             <tr>
                                 <th>N°</th>
                                 <th>Fecha</th>
+                                <th>Día</th>
                                 <th>Producto</th>
                                 <th>Comp</th>
                                 <th>Pagado</th>
@@ -33,6 +41,7 @@
                             <tr>
                                 <td>{{ registro.Id_Comp }}</td>
                                 <td>{{ registro.Fec_Comp.strftime('%d/%m/%y') if registro.Fec_Comp else '-' }}</td>
+                                <td>{{ ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'][registro.Fec_Comp.weekday()] if registro.Fec_Comp else '-' }}</td>
                                 <td>{{ registro.producto_h.Nom_Prod }} ({{ registro.producto_h.Medida }})</td>
                                 <td>{{ registro.Cant_Comp }}</td>
                                 <td>${{ "%.2f"|format(registro.Val_Pag) }}</td>
