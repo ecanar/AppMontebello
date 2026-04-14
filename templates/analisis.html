@@ -1,0 +1,357 @@
+{% extends "base.html" %}
+
+{% block title %}Análisis de Compras - App Montebello{% endblock %}
+
+{% block content %}
+<div class="row mb-2">
+    <div class="col">
+        <h2>Análisis de Compras</h2>
+        <p class="text-muted mb-2">Indicadores agrupados por semana ISO (S01/25 = semana 1 del 2025)</p>
+    </div>
+</div>
+
+{% if sin_datos %}
+<div class="alert alert-warning">No hay datos en el histórico para analizar.</div>
+{% else %}
+
+<!-- Tarjetas resumen -->
+<div class="row g-2 mb-4">
+    <div class="col-6 col-md">
+        <div class="card text-center border-primary h-100">
+            <div class="card-body py-2 px-1">
+                <div class="fw-bold text-primary fs-6">${{ "{:,.0f}".format(total_gasto) }}</div>
+                <small class="text-muted">Gasto Total</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md">
+        <div class="card text-center border-success h-100">
+            <div class="card-body py-2 px-1">
+                <div class="fw-bold text-success fs-6">{{ n_semanas }}</div>
+                <small class="text-muted">Semanas</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md">
+        <div class="card text-center border-warning h-100">
+            <div class="card-body py-2 px-1">
+                <div class="fw-bold text-warning fs-6">{{ n_productos }}</div>
+                <small class="text-muted">Productos</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md">
+        <div class="card text-center border-info h-100">
+            <div class="card-body py-2 px-1">
+                <div class="fw-bold text-info fs-6">{{ n_proveedores }}</div>
+                <small class="text-muted">Proveedores</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md">
+        <div class="card text-center border-danger h-100">
+            <div class="card-body py-2 px-1">
+                <div class="fw-bold text-danger fs-6">{{ cumpl_prom }}%</div>
+                <small class="text-muted">Cumpl. prom.</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs -->
+<ul class="nav nav-tabs mb-3" id="analysisTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-gasto" type="button" role="tab">Gasto</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-productos" type="button" role="tab">Productos</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-proveedores" type="button" role="tab">Proveedores</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-cumplimiento" type="button" role="tab">Cumplimiento</button>
+    </li>
+</ul>
+
+<div class="tab-content" id="analysisTabContent">
+
+    <!-- TAB GASTO -->
+    <div class="tab-pane fade show active" id="tab-gasto" role="tabpanel">
+        <div class="card mb-4">
+            <div class="card-header"><h6 class="mb-0">Gasto Total por Semana ($)</h6></div>
+            <div class="card-body">
+                <div style="overflow-x:auto;">
+                    <div id="cont-gasto-sem" style="height:300px;">
+                        <canvas id="chartGastoSemana"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card mb-4">
+            <div class="card-header"><h6 class="mb-0">Evolución Precio Unitario – Top 5 Productos</h6></div>
+            <div class="card-body">
+                <div style="overflow-x:auto;">
+                    <div id="cont-precio-evol" style="height:300px;">
+                        <canvas id="chartPrecioEvolucion"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB PRODUCTOS -->
+    <div class="tab-pane fade" id="tab-productos" role="tabpanel">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="card mb-4 h-100">
+                    <div class="card-header"><h6 class="mb-0">Top 10 por Gasto Total ($)</h6></div>
+                    <div class="card-body">
+                        <canvas id="chartTopGasto"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card mb-4 h-100">
+                    <div class="card-header"><h6 class="mb-0">Top 10 por Frecuencia de Compra</h6></div>
+                    <div class="card-body">
+                        <canvas id="chartTopFrec"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card mb-4">
+            <div class="card-header"><h6 class="mb-0">Bodega Promedio por Producto (Top 10)</h6></div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped" id="tablaBodega">
+                        <thead class="table-dark">
+                            <tr><th>#</th><th>Producto</th><th>Cant. Bodega Promedio</th></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB PROVEEDORES -->
+    <div class="tab-pane fade" id="tab-proveedores" role="tabpanel">
+        <div class="row g-3">
+            <div class="col-md-5">
+                <div class="card mb-4">
+                    <div class="card-header"><h6 class="mb-0">Distribución por Proveedor</h6></div>
+                    <div class="card-body">
+                        <canvas id="chartProveedores"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-7">
+                <div class="card mb-4">
+                    <div class="card-header"><h6 class="mb-0">Gasto por Proveedor</h6></div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-striped" id="tablaProveedores">
+                                <thead class="table-dark">
+                                    <tr><th>#</th><th>Proveedor</th><th>Gasto Total</th><th>%</th></tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB CUMPLIMIENTO -->
+    <div class="tab-pane fade" id="tab-cumplimiento" role="tabpanel">
+        <div class="card mb-4">
+            <div class="card-header"><h6 class="mb-0">Tasa de Cumplimiento por Semana (Cant. Comprada / Cant. Pedida × 100)</h6></div>
+            <div class="card-body">
+                <div style="overflow-x:auto;">
+                    <div id="cont-cumpl" style="height:300px;">
+                        <canvas id="chartCumplimiento"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card mb-4">
+            <div class="card-header"><h6 class="mb-0">Salidas al Mercado por Semana</h6></div>
+            <div class="card-body">
+                <div style="overflow-x:auto;">
+                    <div id="cont-salidas" style="height:300px;">
+                        <canvas id="chartSalidas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div><!-- /tab-content -->
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% if not sin_datos %}
+<script>
+const PALETTE = [
+    '#0d6efd','#198754','#ffc107','#dc3545','#0dcaf0',
+    '#6f42c1','#fd7e14','#20c997','#e83e8c','#6c757d'
+];
+
+const semanas        = {{ semanas | safe }};
+const gastoSemana    = {{ gasto_sem_vals | safe }};
+const cumplSemana    = {{ cumpl_sem_vals | safe }};
+const salidasSemana  = {{ salidas_vals | safe }};
+const topProductos   = {{ top_productos | safe }};
+const topFrec        = {{ top_frec | safe }};
+const topProveedores = {{ top_proveedores | safe }};
+const bodTop         = {{ bod_top | safe }};
+const precioEvol     = {{ precio_evolucion | safe }};
+const precioProds    = {{ precio_evolucion_prods | safe }};
+
+/* ---- utilidad: ajusta ancho mínimo del contenedor scroll ---- */
+function scrollWidth(contId) {
+    const w = Math.max(640, semanas.length * 62);
+    document.getElementById(contId).style.width = w + 'px';
+}
+
+const scrollOpts = { responsive: true, maintainAspectRatio: false };
+
+/* --- 1. GASTO POR SEMANA --- */
+scrollWidth('cont-gasto-sem');
+new Chart(document.getElementById('chartGastoSemana'), {
+    type: 'bar',
+    data: {
+        labels: semanas,
+        datasets: [{ label: 'Gasto ($)', data: gastoSemana,
+            backgroundColor: '#0d6efd99', borderColor: '#0d6efd', borderWidth: 1 }]
+    },
+    options: { ...scrollOpts,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true } }
+    }
+});
+
+/* --- 2. EVOLUCIÓN PRECIO UNITARIO --- */
+scrollWidth('cont-precio-evol');
+new Chart(document.getElementById('chartPrecioEvolucion'), {
+    type: 'line',
+    data: {
+        labels: semanas,
+        datasets: precioProds.map((prod, i) => ({
+            label: prod,
+            data: precioEvol[prod],
+            borderColor: PALETTE[i % PALETTE.length],
+            backgroundColor: PALETTE[i % PALETTE.length] + '33',
+            tension: 0.3, spanGaps: true, pointRadius: 4
+        }))
+    },
+    options: { ...scrollOpts,
+        plugins: { legend: { position: 'bottom' } },
+        scales: { y: { beginAtZero: false } }
+    }
+});
+
+/* --- 3. TOP 10 PRODUCTOS POR GASTO --- */
+new Chart(document.getElementById('chartTopGasto'), {
+    type: 'bar',
+    data: {
+        labels: topProductos.map(p => p[0]),
+        datasets: [{ label: 'Gasto Total ($)', data: topProductos.map(p => p[1]),
+            backgroundColor: PALETTE }]
+    },
+    options: { indexAxis: 'y', responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true } }
+    }
+});
+
+/* --- 4. TOP 10 POR FRECUENCIA --- */
+new Chart(document.getElementById('chartTopFrec'), {
+    type: 'bar',
+    data: {
+        labels: topFrec.map(p => p[0]),
+        datasets: [{ label: 'Veces comprado', data: topFrec.map(p => p[1]),
+            backgroundColor: [...PALETTE].reverse() }]
+    },
+    options: { indexAxis: 'y', responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
+    }
+});
+
+/* --- 5. TABLA BODEGA --- */
+(function() {
+    const tbody = document.querySelector('#tablaBodega tbody');
+    bodTop.forEach((r, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${i+1}</td><td>${r[0]}</td><td>${r[1]}</td>`;
+        tbody.appendChild(tr);
+    });
+})();
+
+/* --- 6. DOUGHNUT PROVEEDORES (top 10) --- */
+const chartProvData = topProveedores.slice(0, 10);
+new Chart(document.getElementById('chartProveedores'), {
+    type: 'doughnut',
+    data: {
+        labels: chartProvData.map(p => p[0]),
+        datasets: [{ data: chartProvData.map(p => p[1]),
+            backgroundColor: PALETTE }]
+    },
+    options: { responsive: true,
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }
+    }
+});
+
+/* --- 7. TABLA PROVEEDORES --- */
+(function() {
+    const tbody = document.querySelector('#tablaProveedores tbody');
+    const total = topProveedores.reduce((s, p) => s + p[1], 0);
+    topProveedores.forEach((r, i) => {
+        const pct = total > 0 ? (r[1] / total * 100).toFixed(1) : '0.0';
+        const tr  = document.createElement('tr');
+        tr.innerHTML = `<td>${i+1}</td><td>${r[0]}</td>`
+            + `<td>$${r[1].toLocaleString('es-CO', {minimumFractionDigits:0})}</td>`
+            + `<td>${pct}%</td>`;
+        tbody.appendChild(tr);
+    });
+})();
+
+/* --- 8. CUMPLIMIENTO POR SEMANA --- */
+scrollWidth('cont-cumpl');
+new Chart(document.getElementById('chartCumplimiento'), {
+    type: 'line',
+    data: {
+        labels: semanas,
+        datasets: [{ label: 'Cumplimiento (%)', data: cumplSemana,
+            borderColor: '#198754', backgroundColor: '#19875433',
+            tension: 0.3, fill: true, pointRadius: 4 }]
+    },
+    options: { ...scrollOpts,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, suggestedMax: 110,
+            ticks: { callback: v => v + '%' } } }
+    }
+});
+
+/* --- 9. SALIDAS AL MERCADO --- */
+scrollWidth('cont-salidas');
+new Chart(document.getElementById('chartSalidas'), {
+    type: 'bar',
+    data: {
+        labels: semanas,
+        datasets: [{ label: 'Salidas', data: salidasSemana,
+            backgroundColor: '#0dcaf099', borderColor: '#0dcaf0', borderWidth: 1 }]
+    },
+    options: { ...scrollOpts,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

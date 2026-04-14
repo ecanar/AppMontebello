@@ -6,6 +6,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import cast, Integer
 from datetime import datetime, timezone, timedelta
 import os
+import json
+from collections import defaultdict
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -842,6 +844,112 @@ def consultas_ia():
         except Exception as e:
             error = f'Error al consultar IA: {str(e)}'
     return render_template('consultas_ia.html', respuesta=respuesta, error=error, pregunta=pregunta)
+
+@app.route('/analisis')
+@login_required
+def analisis():
+    registros = HistoricoCompra.query.order_by(HistoricoCompra.Fec_Comp).all()
+
+    empty = dict(sin_datos=True, total_gasto=0, n_semanas=0, n_productos=0,
+                 n_proveedores=0, cumpl_prom=0, semanas='[]', gasto_sem_vals='[]',
+                 cumpl_sem_vals='[]', salidas_vals='[]', top_productos='[]',
+                 top_frec='[]', top_proveedores='[]', bod_top='[]',
+                 precio_evolucion='{}', precio_evolucion_prods='[]')
+    if not registros:
+        return render_template('analisis.html', **empty)
+
+    def semana_key(fecha):
+        iso = fecha.isocalendar()
+        return (iso[0], iso[1])
+
+    def semana_label(key):
+        return f"S{key[1]:02d}/{str(key[0])[2:]}"
+
+    gasto_semana   = defaultdict(float)
+    gasto_producto = defaultdict(float)
+    gasto_prov     = defaultdict(float)
+    ped_semana     = defaultdict(float)
+    comp_semana    = defaultdict(float)
+    bod_producto   = defaultdict(list)
+    salidas_semana = defaultdict(set)
+    frec_producto  = defaultdict(int)
+    precio_prod_sem = {}
+    semanas_set = set()
+
+    for r in registros:
+        sk       = semana_key(r.Fec_Comp)
+        nom_prod = r.producto_h.Nom_Prod
+        nom_prov = r.proveedor_h.Nom_Prov
+        semanas_set.add(sk)
+
+        gasto_semana[sk]        += r.Val_Pag
+        gasto_producto[nom_prod] += r.Val_Pag
+        gasto_prov[nom_prov]     += r.Val_Pag
+        ped_semana[sk]           += r.Cant_Ped
+        comp_semana[sk]          += r.Cant_Comp
+        bod_producto[nom_prod].append(r.Cant_Bod)
+        salidas_semana[sk].add(r.Id_Comp)
+        frec_producto[nom_prod]  += 1
+
+        if r.Cant_Comp > 0:
+            if nom_prod not in precio_prod_sem:
+                precio_prod_sem[nom_prod] = {}
+            if sk not in precio_prod_sem[nom_prod]:
+                precio_prod_sem[nom_prod][sk] = [0.0, 0.0]
+            precio_prod_sem[nom_prod][sk][0] += r.Val_Pag
+            precio_prod_sem[nom_prod][sk][1] += r.Cant_Comp
+
+    semanas_keys   = sorted(semanas_set)
+    semanas_labels = [semana_label(k) for k in semanas_keys]
+    gasto_sem_vals = [round(gasto_semana[k], 2) for k in semanas_keys]
+
+    cumpl_sem_vals = [
+        round(comp_semana[k] / ped_semana[k] * 100, 1) if ped_semana[k] > 0 else 0.0
+        for k in semanas_keys
+    ]
+    salidas_vals = [len(salidas_semana[k]) for k in semanas_keys]
+
+    top_productos  = sorted(gasto_producto.items(), key=lambda x: x[1], reverse=True)[:10]
+    top_frec       = sorted(frec_producto.items(),  key=lambda x: x[1], reverse=True)[:10]
+    top_proveedores = sorted(gasto_prov.items(),    key=lambda x: x[1], reverse=True)
+
+    top5_prods = [p[0] for p in top_productos[:5]]
+    precio_evolucion = {}
+    for prod in top5_prods:
+        vals = []
+        for k in semanas_keys:
+            datos = precio_prod_sem.get(prod, {}).get(k)
+            if datos and datos[1] > 0:
+                vals.append(round(datos[0] / datos[1], 2))
+            else:
+                vals.append(None)
+        precio_evolucion[prod] = vals
+
+    bod_prom = {p: round(sum(v) / len(v), 2) for p, v in bod_producto.items() if v}
+    bod_top  = sorted(bod_prom.items(), key=lambda x: x[1], reverse=True)[:10]
+
+    total_gasto  = round(sum(gasto_sem_vals), 2)
+    cumpl_prom   = round(sum(cumpl_sem_vals) / len(cumpl_sem_vals), 1) if cumpl_sem_vals else 0
+
+    return render_template('analisis.html',
+        sin_datos=False,
+        total_gasto=total_gasto,
+        n_semanas=len(semanas_keys),
+        n_productos=len(gasto_producto),
+        n_proveedores=len(gasto_prov),
+        cumpl_prom=cumpl_prom,
+        semanas=json.dumps(semanas_labels),
+        gasto_sem_vals=json.dumps(gasto_sem_vals),
+        cumpl_sem_vals=json.dumps(cumpl_sem_vals),
+        salidas_vals=json.dumps(salidas_vals),
+        top_productos=json.dumps([[p[0], round(p[1], 2)] for p in top_productos]),
+        top_frec=json.dumps([[p[0], p[1]] for p in top_frec]),
+        top_proveedores=json.dumps([[p[0], round(p[1], 2)] for p in top_proveedores]),
+        bod_top=json.dumps([[p[0], p[1]] for p in bod_top]),
+        precio_evolucion=json.dumps(precio_evolucion),
+        precio_evolucion_prods=json.dumps(top5_prods),
+    )
+
 
 if __name__ == '__main__':
     # Railway asigna el puerto automáticamente en la variable de entorno PORT
