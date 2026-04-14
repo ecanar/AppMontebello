@@ -8,6 +8,7 @@ from datetime import datetime, timezone, timedelta
 import os
 import json
 from collections import defaultdict
+import calendar
 from io import BytesIO
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -978,24 +979,35 @@ def analisis():
 
     fec_ini_str = request.args.get('fec_ini', '').strip()
     fec_fin_str = request.args.get('fec_fin', '').strip()
+    mes_str     = request.args.get('mes', '').strip()
     modo = request.args.get('modo', 'compra')
     if modo not in ('compra', 'mes'):
         modo = 'compra'
-    try:
-        fec_ini = datetime.strptime(fec_ini_str, '%Y-%m-%d').date() if fec_ini_str else None
-    except ValueError:
-        fec_ini = None; fec_ini_str = ''
-    try:
-        fec_fin = datetime.strptime(fec_fin_str, '%Y-%m-%d').date() if fec_fin_str else None
-    except ValueError:
-        fec_fin = None; fec_fin_str = ''
+
+    fec_ini = fec_fin = None
+    if modo == 'compra':
+        try:
+            fec_ini = datetime.strptime(fec_ini_str, '%Y-%m-%d').date() if fec_ini_str else None
+        except ValueError:
+            fec_ini = None; fec_ini_str = ''
+        try:
+            fec_fin = datetime.strptime(fec_fin_str, '%Y-%m-%d').date() if fec_fin_str else None
+        except ValueError:
+            fec_fin = None; fec_fin_str = ''
+    elif modo == 'mes' and mes_str:
+        try:
+            yr, mn = int(mes_str[:4]), int(mes_str[5:7])
+            fec_ini = datetime(yr, mn, 1).date()
+            fec_fin = datetime(yr, mn, calendar.monthrange(yr, mn)[1]).date()
+        except (ValueError, IndexError):
+            mes_str = ''
 
     todos = HistoricoCompra.query.order_by(HistoricoCompra.Fec_Comp).all()
     registros = [r for r in todos
                  if (fec_ini is None or r.Fec_Comp >= fec_ini)
                  and (fec_fin is None or r.Fec_Comp <= fec_fin)]
 
-    extra = dict(active_mode=modo, fec_ini_val=fec_ini_str, fec_fin_val=fec_fin_str)
+    extra = dict(active_mode=modo, fec_ini_val=fec_ini_str, fec_fin_val=fec_fin_str, mes_val=mes_str)
     empty = dict(sin_datos=True, total_gasto=0, n_semanas=0, n_productos=0,
                  n_proveedores=0, n_compras=0,
                  data_compra='{}', data_semana='{}', data_mes='{}',
@@ -1096,6 +1108,7 @@ def analisis():
         active_mode=modo,
         fec_ini_val=fec_ini_str,
         fec_fin_val=fec_fin_str,
+        mes_val=mes_str,
     )
 
 
