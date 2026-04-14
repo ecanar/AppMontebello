@@ -204,6 +204,7 @@
 
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 {% if not sin_datos %}
 <script>
 const PALETTE = [
@@ -318,6 +319,7 @@ function setMode(mode) {
 
 /* ---- Gráficos estáticos (no cambian con el selector) ---- */
 new Chart(document.getElementById('chartTopGasto'), {
+    plugins: [ChartDataLabels],
     type: 'bar',
     data: {
         labels: topProductos.map(p => p[0]),
@@ -325,11 +327,21 @@ new Chart(document.getElementById('chartTopGasto'), {
             backgroundColor: PALETTE }]
     },
     options: { indexAxis: 'y', responsive: true,
-        plugins: { legend: { display: false } },
+        plugins: {
+            legend: { display: false },
+            tooltip: { enabled: true },
+            datalabels: {
+                anchor: 'end', align: 'end', clamp: true,
+                color: '#333', font: { size: 11 },
+                formatter: v => '$' + v.toLocaleString('es-CO', {minimumFractionDigits: 0, maximumFractionDigits: 0})
+            }
+        },
+        layout: { padding: { right: 90 } },
         scales: { x: { beginAtZero: true } } }
 });
 
 new Chart(document.getElementById('chartTopFrec'), {
+    plugins: [ChartDataLabels],
     type: 'bar',
     data: {
         labels: topFrec.map(p => p[0]),
@@ -337,7 +349,16 @@ new Chart(document.getElementById('chartTopFrec'), {
             backgroundColor: [...PALETTE].reverse() }]
     },
     options: { indexAxis: 'y', responsive: true,
-        plugins: { legend: { display: false } },
+        plugins: {
+            legend: { display: false },
+            tooltip: { enabled: true },
+            datalabels: {
+                anchor: 'end', align: 'end', clamp: true,
+                color: '#333', font: { size: 11 },
+                formatter: v => v + ' veces'
+            }
+        },
+        layout: { padding: { right: 70 } },
         scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } } }
 });
 
