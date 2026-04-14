@@ -979,7 +979,7 @@ def analisis():
     registros = HistoricoCompra.query.order_by(HistoricoCompra.Fec_Comp).all()
 
     empty = dict(sin_datos=True, total_gasto=0, n_semanas=0, n_productos=0,
-                 n_proveedores=0, cumpl_prom=0,
+                 n_proveedores=0, n_compras=0,
                  data_compra='{}', data_semana='{}', data_mes='{}',
                  top_productos='[]', top_frec='[]', top_proveedores='[]',
                  bod_top='[]', precio_evolucion_prods='[]')
@@ -1058,8 +1058,7 @@ def analisis():
         top5=top5_prods)
 
     total_gasto = round(sum(gasto_producto.values()), 2)
-    cumpl_vals  = data_semana['cumpl']
-    cumpl_prom  = round(sum(cumpl_vals)/len(cumpl_vals), 1) if cumpl_vals else 0
+    n_compras   = len(set(r.Id_Comp for r in registros))
 
     return render_template('analisis.html',
         sin_datos=False,
@@ -1067,7 +1066,7 @@ def analisis():
         n_semanas=len(semanas_set),
         n_productos=len(gasto_producto),
         n_proveedores=len(gasto_prov),
-        cumpl_prom=cumpl_prom,
+        n_compras=n_compras,
         data_compra=json.dumps(data_compra),
         data_semana=json.dumps(data_semana),
         data_mes=json.dumps(data_mes),
