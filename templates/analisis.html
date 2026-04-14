@@ -58,6 +58,17 @@
     </div>
 </div>
 
+<!-- Selector de agrupación -->
+<div class="d-flex align-items-center gap-2 mb-3">
+    <span class="fw-semibold">Ver por:</span>
+    <div class="btn-group" role="group">
+        <button type="button" class="btn btn-sm btn-outline-primary" id="btnCompra" onclick="setMode('compra')">N° Compra</button>
+        <button type="button" class="btn btn-sm btn-primary active" id="btnSemana" onclick="setMode('semana')">Semana</button>
+        <button type="button" class="btn btn-sm btn-outline-primary" id="btnMes" onclick="setMode('mes')">Mes</button>
+    </div>
+    <small class="text-muted" id="modeLabel">Agrupado por semana ISO</small>
+</div>
+
 <!-- Tabs -->
 <ul class="nav nav-tabs mb-3" id="analysisTabs" role="tablist">
     <li class="nav-item" role="presentation">
@@ -201,61 +212,112 @@ const PALETTE = [
     '#6f42c1','#fd7e14','#20c997','#e83e8c','#6c757d'
 ];
 
-const semanas        = {{ semanas | safe }};
-const gastoSemana    = {{ gasto_sem_vals | safe }};
-const cumplSemana    = {{ cumpl_sem_vals | safe }};
-const salidasSemana  = {{ salidas_vals | safe }};
+const ALL_DATA = {
+    compra: {{ data_compra | safe }},
+    semana: {{ data_semana | safe }},
+    mes:    {{ data_mes    | safe }}
+};
 const topProductos   = {{ top_productos | safe }};
 const topFrec        = {{ top_frec | safe }};
 const topProveedores = {{ top_proveedores | safe }};
 const bodTop         = {{ bod_top | safe }};
-const precioEvol     = {{ precio_evolucion | safe }};
 const precioProds    = {{ precio_evolucion_prods | safe }};
 
-/* ---- utilidad: ajusta ancho mínimo del contenedor scroll ---- */
-function scrollWidth(contId) {
-    const w = Math.max(640, semanas.length * 62);
-    document.getElementById(contId).style.width = w + 'px';
-}
+const MODE_LABELS = {
+    compra: 'Agrupado por N° de compra',
+    semana: 'Agrupado por semana ISO',
+    mes:    'Agrupado por mes'
+};
 
 const scrollOpts = { responsive: true, maintainAspectRatio: false };
 
-/* --- 1. GASTO POR SEMANA --- */
-scrollWidth('cont-gasto-sem');
-new Chart(document.getElementById('chartGastoSemana'), {
+function setScrollWidth(contId, n) {
+    document.getElementById(contId).style.width = Math.max(640, n * 62) + 'px';
+}
+
+/* ---- Crear gráficos ---- */
+const chartGasto = new Chart(document.getElementById('chartGastoSemana'), {
     type: 'bar',
-    data: {
-        labels: semanas,
-        datasets: [{ label: 'Gasto ($)', data: gastoSemana,
-            backgroundColor: '#0d6efd99', borderColor: '#0d6efd', borderWidth: 1 }]
-    },
-    options: { ...scrollOpts,
-        plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: true } }
-    }
+    data: { labels: [], datasets: [{ label: 'Gasto ($)', data: [],
+        backgroundColor: '#0d6efd99', borderColor: '#0d6efd', borderWidth: 1 }] },
+    options: { ...scrollOpts, plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true } } }
 });
 
-/* --- 2. EVOLUCIÓN PRECIO UNITARIO --- */
-scrollWidth('cont-precio-evol');
-new Chart(document.getElementById('chartPrecioEvolucion'), {
+const chartPrecio = new Chart(document.getElementById('chartPrecioEvolucion'), {
     type: 'line',
-    data: {
-        labels: semanas,
-        datasets: precioProds.map((prod, i) => ({
-            label: prod,
-            data: precioEvol[prod],
-            borderColor: PALETTE[i % PALETTE.length],
-            backgroundColor: PALETTE[i % PALETTE.length] + '33',
-            tension: 0.3, spanGaps: true, pointRadius: 4
-        }))
-    },
-    options: { ...scrollOpts,
-        plugins: { legend: { position: 'bottom' } },
-        scales: { y: { beginAtZero: false } }
-    }
+    data: { labels: [], datasets: precioProds.map((prod, i) => ({
+        label: prod, data: [],
+        borderColor: PALETTE[i % PALETTE.length],
+        backgroundColor: PALETTE[i % PALETTE.length] + '33',
+        tension: 0.3, spanGaps: true, pointRadius: 4
+    })) },
+    options: { ...scrollOpts, plugins: { legend: { position: 'bottom' } },
+        scales: { y: { beginAtZero: false } } }
 });
 
-/* --- 3. TOP 10 PRODUCTOS POR GASTO --- */
+const chartCumpl = new Chart(document.getElementById('chartCumplimiento'), {
+    type: 'line',
+    data: { labels: [], datasets: [{ label: 'Cumplimiento (%)', data: [],
+        borderColor: '#198754', backgroundColor: '#19875433',
+        tension: 0.3, fill: true, pointRadius: 4 }] },
+    options: { ...scrollOpts, plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, suggestedMax: 110,
+            ticks: { callback: v => v + '%' } } } }
+});
+
+const chartSalidas = new Chart(document.getElementById('chartSalidas'), {
+    type: 'bar',
+    data: { labels: [], datasets: [{ label: 'Salidas', data: [],
+        backgroundColor: '#0dcaf099', borderColor: '#0dcaf0', borderWidth: 1 }] },
+    options: { ...scrollOpts, plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+});
+
+/* ---- Función para cambiar modo ---- */
+function setMode(mode) {
+    const d = ALL_DATA[mode];
+    const n = d.labels.length;
+
+    // Actualizar etiqueta
+    document.getElementById('modeLabel').textContent = MODE_LABELS[mode];
+
+    // Botones
+    ['compra','semana','mes'].forEach(m => {
+        const btn = document.getElementById('btn' + m.charAt(0).toUpperCase() + m.slice(1));
+        btn.className = m === mode
+            ? 'btn btn-sm btn-primary active'
+            : 'btn btn-sm btn-outline-primary';
+    });
+
+    // Gasto
+    setScrollWidth('cont-gasto-sem', n);
+    chartGasto.data.labels = d.labels;
+    chartGasto.data.datasets[0].data = d.gasto;
+    chartGasto.update();
+
+    // Precio unitario
+    setScrollWidth('cont-precio-evol', n);
+    chartPrecio.data.labels = d.labels;
+    precioProds.forEach((prod, i) => {
+        chartPrecio.data.datasets[i].data = d.precio[prod] || [];
+    });
+    chartPrecio.update();
+
+    // Cumplimiento
+    setScrollWidth('cont-cumpl', n);
+    chartCumpl.data.labels = d.labels;
+    chartCumpl.data.datasets[0].data = d.cumpl;
+    chartCumpl.update();
+
+    // Salidas
+    setScrollWidth('cont-salidas', n);
+    chartSalidas.data.labels = d.labels;
+    chartSalidas.data.datasets[0].data = d.salidas;
+    chartSalidas.update();
+}
+
+/* ---- Gráficos estáticos (no cambian con el selector) ---- */
 new Chart(document.getElementById('chartTopGasto'), {
     type: 'bar',
     data: {
@@ -265,11 +327,9 @@ new Chart(document.getElementById('chartTopGasto'), {
     },
     options: { indexAxis: 'y', responsive: true,
         plugins: { legend: { display: false } },
-        scales: { x: { beginAtZero: true } }
-    }
+        scales: { x: { beginAtZero: true } } }
 });
 
-/* --- 4. TOP 10 POR FRECUENCIA --- */
 new Chart(document.getElementById('chartTopFrec'), {
     type: 'bar',
     data: {
@@ -279,11 +339,9 @@ new Chart(document.getElementById('chartTopFrec'), {
     },
     options: { indexAxis: 'y', responsive: true,
         plugins: { legend: { display: false } },
-        scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
-    }
+        scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } } }
 });
 
-/* --- 5. TABLA BODEGA --- */
 (function() {
     const tbody = document.querySelector('#tablaBodega tbody');
     bodTop.forEach((r, i) => {
@@ -293,21 +351,17 @@ new Chart(document.getElementById('chartTopFrec'), {
     });
 })();
 
-/* --- 6. DOUGHNUT PROVEEDORES (top 10) --- */
 const chartProvData = topProveedores.slice(0, 10);
 new Chart(document.getElementById('chartProveedores'), {
     type: 'doughnut',
     data: {
         labels: chartProvData.map(p => p[0]),
-        datasets: [{ data: chartProvData.map(p => p[1]),
-            backgroundColor: PALETTE }]
+        datasets: [{ data: chartProvData.map(p => p[1]), backgroundColor: PALETTE }]
     },
     options: { responsive: true,
-        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }
-    }
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } } }
 });
 
-/* --- 7. TABLA PROVEEDORES --- */
 (function() {
     const tbody = document.querySelector('#tablaProveedores tbody');
     const total = topProveedores.reduce((s, p) => s + p[1], 0);
@@ -321,37 +375,8 @@ new Chart(document.getElementById('chartProveedores'), {
     });
 })();
 
-/* --- 8. CUMPLIMIENTO POR SEMANA --- */
-scrollWidth('cont-cumpl');
-new Chart(document.getElementById('chartCumplimiento'), {
-    type: 'line',
-    data: {
-        labels: semanas,
-        datasets: [{ label: 'Cumplimiento (%)', data: cumplSemana,
-            borderColor: '#198754', backgroundColor: '#19875433',
-            tension: 0.3, fill: true, pointRadius: 4 }]
-    },
-    options: { ...scrollOpts,
-        plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: true, suggestedMax: 110,
-            ticks: { callback: v => v + '%' } } }
-    }
-});
-
-/* --- 9. SALIDAS AL MERCADO --- */
-scrollWidth('cont-salidas');
-new Chart(document.getElementById('chartSalidas'), {
-    type: 'bar',
-    data: {
-        labels: semanas,
-        datasets: [{ label: 'Salidas', data: salidasSemana,
-            backgroundColor: '#0dcaf099', borderColor: '#0dcaf0', borderWidth: 1 }]
-    },
-    options: { ...scrollOpts,
-        plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
-    }
-});
+/* ---- Cargar con modo semana por defecto ---- */
+setMode('semana');
 </script>
 {% endif %}
 {% endblock %}

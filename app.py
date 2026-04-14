@@ -848,105 +848,107 @@ def consultas_ia():
 @app.route('/analisis')
 @login_required
 def analisis():
+    MESES_ES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
+
     registros = HistoricoCompra.query.order_by(HistoricoCompra.Fec_Comp).all()
 
     empty = dict(sin_datos=True, total_gasto=0, n_semanas=0, n_productos=0,
-                 n_proveedores=0, cumpl_prom=0, semanas='[]', gasto_sem_vals='[]',
-                 cumpl_sem_vals='[]', salidas_vals='[]', top_productos='[]',
-                 top_frec='[]', top_proveedores='[]', bod_top='[]',
-                 precio_evolucion='{}', precio_evolucion_prods='[]')
+                 n_proveedores=0, cumpl_prom=0,
+                 data_compra='{}', data_semana='{}', data_mes='{}',
+                 top_productos='[]', top_frec='[]', top_proveedores='[]',
+                 bod_top='[]', precio_evolucion_prods='[]')
     if not registros:
         return render_template('analisis.html', **empty)
 
-    def semana_key(fecha):
-        iso = fecha.isocalendar()
-        return (iso[0], iso[1])
+    def _agrupar(regs, key_fn, label_fn, top5):
+        gasto_g   = defaultdict(float)
+        ped_g     = defaultdict(float)
+        comp_g    = defaultdict(float)
+        salidas_g = defaultdict(set)
+        precio_g  = {}
+        keys_set  = set()
+        for r in regs:
+            k  = key_fn(r)
+            np = r.producto_h.Nom_Prod
+            keys_set.add(k)
+            gasto_g[k]  += r.Val_Pag
+            ped_g[k]    += r.Cant_Ped
+            comp_g[k]   += r.Cant_Comp
+            salidas_g[k].add(r.Id_Comp)
+            if r.Cant_Comp > 0:
+                precio_g.setdefault(np, {}).setdefault(k, [0.0, 0.0])
+                precio_g[np][k][0] += r.Val_Pag
+                precio_g[np][k][1] += r.Cant_Comp
+        keys    = sorted(keys_set)
+        labels  = [label_fn(k) for k in keys]
+        gasto   = [round(gasto_g[k], 2) for k in keys]
+        cumpl   = [round(comp_g[k]/ped_g[k]*100, 1) if ped_g[k] > 0 else 0.0 for k in keys]
+        salidas = [len(salidas_g[k]) for k in keys]
+        precio_evol = {}
+        for prod in top5:
+            vals = []
+            for k in keys:
+                d = precio_g.get(prod, {}).get(k)
+                vals.append(round(d[0]/d[1], 2) if d and d[1] > 0 else None)
+            precio_evol[prod] = vals
+        return {'labels': labels, 'gasto': gasto, 'cumpl': cumpl,
+                'salidas': salidas, 'precio': precio_evol}
 
-    def semana_label(key):
-        return f"S{key[1]:02d}/{str(key[0])[2:]}"
-
-    gasto_semana   = defaultdict(float)
-    gasto_producto = defaultdict(float)
-    gasto_prov     = defaultdict(float)
-    ped_semana     = defaultdict(float)
-    comp_semana    = defaultdict(float)
-    bod_producto   = defaultdict(list)
-    salidas_semana = defaultdict(set)
-    frec_producto  = defaultdict(int)
-    precio_prod_sem = {}
-    semanas_set = set()
+    gasto_producto  = defaultdict(float)
+    gasto_prov      = defaultdict(float)
+    bod_producto    = defaultdict(list)
+    frec_producto   = defaultdict(int)
+    semanas_set     = set()
 
     for r in registros:
-        sk       = semana_key(r.Fec_Comp)
-        nom_prod = r.producto_h.Nom_Prod
-        nom_prov = r.proveedor_h.Nom_Prov
-        semanas_set.add(sk)
+        np = r.producto_h.Nom_Prod
+        semanas_set.add(tuple(r.Fec_Comp.isocalendar()[:2]))
+        gasto_producto[np]                   += r.Val_Pag
+        gasto_prov[r.proveedor_h.Nom_Prov]  += r.Val_Pag
+        bod_producto[np].append(r.Cant_Bod)
+        frec_producto[np]                    += 1
 
-        gasto_semana[sk]        += r.Val_Pag
-        gasto_producto[nom_prod] += r.Val_Pag
-        gasto_prov[nom_prov]     += r.Val_Pag
-        ped_semana[sk]           += r.Cant_Ped
-        comp_semana[sk]          += r.Cant_Comp
-        bod_producto[nom_prod].append(r.Cant_Bod)
-        salidas_semana[sk].add(r.Id_Comp)
-        frec_producto[nom_prod]  += 1
+    top_productos   = sorted(gasto_producto.items(), key=lambda x: x[1], reverse=True)[:10]
+    top_frec        = sorted(frec_producto.items(),  key=lambda x: x[1], reverse=True)[:10]
+    top_proveedores = sorted(gasto_prov.items(),     key=lambda x: x[1], reverse=True)
+    top5_prods      = [p[0] for p in top_productos[:5]]
+    bod_top         = sorted(
+        {p: round(sum(v)/len(v), 2) for p, v in bod_producto.items() if v}.items(),
+        key=lambda x: x[1], reverse=True)[:10]
 
-        if r.Cant_Comp > 0:
-            if nom_prod not in precio_prod_sem:
-                precio_prod_sem[nom_prod] = {}
-            if sk not in precio_prod_sem[nom_prod]:
-                precio_prod_sem[nom_prod][sk] = [0.0, 0.0]
-            precio_prod_sem[nom_prod][sk][0] += r.Val_Pag
-            precio_prod_sem[nom_prod][sk][1] += r.Cant_Comp
+    data_compra = _agrupar(registros,
+        key_fn=lambda r: r.Id_Comp,
+        label_fn=lambda k: f"C{k}",
+        top5=top5_prods)
 
-    semanas_keys   = sorted(semanas_set)
-    semanas_labels = [semana_label(k) for k in semanas_keys]
-    gasto_sem_vals = [round(gasto_semana[k], 2) for k in semanas_keys]
+    data_semana = _agrupar(registros,
+        key_fn=lambda r: tuple(r.Fec_Comp.isocalendar()[:2]),
+        label_fn=lambda k: f"S{k[1]:02d}/{str(k[0])[2:]}",
+        top5=top5_prods)
 
-    cumpl_sem_vals = [
-        round(comp_semana[k] / ped_semana[k] * 100, 1) if ped_semana[k] > 0 else 0.0
-        for k in semanas_keys
-    ]
-    salidas_vals = [len(salidas_semana[k]) for k in semanas_keys]
+    data_mes = _agrupar(registros,
+        key_fn=lambda r: (r.Fec_Comp.year, r.Fec_Comp.month),
+        label_fn=lambda k: f"{MESES_ES[k[1]-1]}/{str(k[0])[2:]}",
+        top5=top5_prods)
 
-    top_productos  = sorted(gasto_producto.items(), key=lambda x: x[1], reverse=True)[:10]
-    top_frec       = sorted(frec_producto.items(),  key=lambda x: x[1], reverse=True)[:10]
-    top_proveedores = sorted(gasto_prov.items(),    key=lambda x: x[1], reverse=True)
-
-    top5_prods = [p[0] for p in top_productos[:5]]
-    precio_evolucion = {}
-    for prod in top5_prods:
-        vals = []
-        for k in semanas_keys:
-            datos = precio_prod_sem.get(prod, {}).get(k)
-            if datos and datos[1] > 0:
-                vals.append(round(datos[0] / datos[1], 2))
-            else:
-                vals.append(None)
-        precio_evolucion[prod] = vals
-
-    bod_prom = {p: round(sum(v) / len(v), 2) for p, v in bod_producto.items() if v}
-    bod_top  = sorted(bod_prom.items(), key=lambda x: x[1], reverse=True)[:10]
-
-    total_gasto  = round(sum(gasto_sem_vals), 2)
-    cumpl_prom   = round(sum(cumpl_sem_vals) / len(cumpl_sem_vals), 1) if cumpl_sem_vals else 0
+    total_gasto = round(sum(gasto_producto.values()), 2)
+    cumpl_vals  = data_semana['cumpl']
+    cumpl_prom  = round(sum(cumpl_vals)/len(cumpl_vals), 1) if cumpl_vals else 0
 
     return render_template('analisis.html',
         sin_datos=False,
         total_gasto=total_gasto,
-        n_semanas=len(semanas_keys),
+        n_semanas=len(semanas_set),
         n_productos=len(gasto_producto),
         n_proveedores=len(gasto_prov),
         cumpl_prom=cumpl_prom,
-        semanas=json.dumps(semanas_labels),
-        gasto_sem_vals=json.dumps(gasto_sem_vals),
-        cumpl_sem_vals=json.dumps(cumpl_sem_vals),
-        salidas_vals=json.dumps(salidas_vals),
-        top_productos=json.dumps([[p[0], round(p[1], 2)] for p in top_productos]),
+        data_compra=json.dumps(data_compra),
+        data_semana=json.dumps(data_semana),
+        data_mes=json.dumps(data_mes),
+        top_productos=json.dumps([[p[0], round(p[1],2)] for p in top_productos]),
         top_frec=json.dumps([[p[0], p[1]] for p in top_frec]),
-        top_proveedores=json.dumps([[p[0], round(p[1], 2)] for p in top_proveedores]),
+        top_proveedores=json.dumps([[p[0], round(p[1],2)] for p in top_proveedores]),
         bod_top=json.dumps([[p[0], p[1]] for p in bod_top]),
-        precio_evolucion=json.dumps(precio_evolucion),
         precio_evolucion_prods=json.dumps(top5_prods),
     )
 
